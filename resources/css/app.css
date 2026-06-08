@@ -2,81 +2,122 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+@layer base {
+    body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
 }
 
 :root {
-    --c-primary:      #1a1040;
-    --c-primary-end:  #2d1f60;
-    --c-accent:       #7c3aed;
-    --c-accent-hover: #6d28d9;
-    --c-accent-light: #ede9fe;
-    --c-accent-text:  #5b21b6;
-    --c-success:       #16a34a;
-    --c-success-hover: #15803d;
-    --c-success-light: #dcfce7;
-    --c-success-text:  #166534;
-    --c-danger:       #dc2626;
-    --c-danger-hover: #b91c1c;
-    --c-sidebar-from:       #1a1040;
-    --c-sidebar-to:         #2d1f60;
-    --c-sidebar-text:       #e9d5ff;
-    --c-sidebar-muted:      #a78bfa;
-    --c-sidebar-active-bg:  rgba(34,197,94,0.15);
-    --c-sidebar-active-txt: #4ade80;
-    --c-sidebar-active-bdr: rgba(34,197,94,0.3);
-    --c-table-hdr-bg:   #f5f3ff;
-    --c-table-hdr-txt:  #7c3aed;
-    --c-table-row-hover: rgba(124,58,237,0.04);
-    --c-modal-from: #7c3aed;
-    --c-modal-to:   #4c1d95;
+    /* Brand */
+    --c-primary:       #1a1040;
+    --c-primary-end:   #2d1f60;
+    --c-accent:        #7c3aed;
+    --c-accent-h:      #6d28d9;
+    --c-accent-light:  #ede9fe;
+    --c-accent-text:   #5b21b6;
+    /* Success / green */
+    --c-green:         #16a34a;
+    --c-green-h:       #15803d;
+    --c-green-light:   #dcfce7;
+    --c-green-text:    #166534;
+    /* Danger */
+    --c-red:           #dc2626;
+    --c-red-h:         #b91c1c;
+    /* Sidebar */
+    --c-sb-from:       #1a1040;
+    --c-sb-to:         #2d1f60;
+    --c-sb-txt:        #e9d5ff;
+    --c-sb-muted:      #a78bfa;
+    --c-sb-act-bg:     rgba(74,222,128,0.15);
+    --c-sb-act-txt:    #4ade80;
+    --c-sb-act-bdr:    rgba(74,222,128,0.3);
+    /* Table */
+    --c-th-bg:         #f5f3ff;
+    --c-th-txt:        #6d28d9;
+    --c-tr-hover:      rgba(124,58,237,0.03);
+    /* Modal */
+    --c-modal-from:    #7c3aed;
+    --c-modal-to:      #4c1d95;
 }
 
 @layer components {
-    .bg-sidebar { background: linear-gradient(to bottom, var(--c-sidebar-from), var(--c-sidebar-to)); }
-    .text-sidebar-muted { color: var(--c-sidebar-muted); }
-    .text-sidebar-base  { color: var(--c-sidebar-text); }
-    .text-brand-accent  { color: var(--c-accent); }
+    /* Sidebar */
+    .bg-sidebar { background: linear-gradient(160deg, var(--c-sb-from) 0%, var(--c-sb-to) 100%); }
+    .text-sb-muted { color: var(--c-sb-muted); }
+    .text-sb      { color: var(--c-sb-txt); }
 
-    .bg-brand-accent-light { background-color: var(--c-accent-light); }
-    .bg-brand-success      { background-color: var(--c-success); }
-
-    .modal-header { background: linear-gradient(to right, var(--c-modal-from), var(--c-modal-to)); }
-
-    .table-header    { background-color: var(--c-table-hdr-bg); }
-    .table-header th { color: var(--c-table-hdr-txt); }
-    .table-row:hover { background-color: var(--c-table-row-hover); }
-
-    .btn-primary { background-color: var(--c-accent); color: #fff; transition: background .15s; }
-    .btn-primary:hover    { background-color: var(--c-accent-hover); }
-    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-
-    .btn-danger { background-color: var(--c-danger); color: #fff; transition: background .15s; }
-    .btn-danger:hover { background-color: var(--c-danger-hover); }
-
-    .nav-active {
-        background-color: var(--c-sidebar-active-bg);
-        color: var(--c-sidebar-active-txt);
-        border: 1px solid var(--c-sidebar-active-bdr);
+    /* Navigation */
+    .nav-link {
+        @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150;
+        color: var(--c-sb-txt);
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .nav-link.active {
+        background: var(--c-sb-act-bg);
+        color: var(--c-sb-act-txt);
+        border: 1px solid var(--c-sb-act-bdr);
         font-weight: 500;
     }
-    .nav-inactive { color: var(--c-sidebar-text); }
-    .nav-inactive:hover { background: rgba(255,255,255,.1); color: #fff; }
 
-    .badge-active   { background-color: var(--c-success-light); color: var(--c-success-text); }
-    .badge-inactive { background-color: #f3f4f6; color: #6b7280; }
-    .badge-accent   { background-color: var(--c-accent-light); color: var(--c-accent-text); }
-    .badge-success  { background-color: var(--c-success-light); color: var(--c-success-text); }
-    .badge-code     { background-color: var(--c-success-light); color: var(--c-success-text); font-family: 'Plus Jakarta Sans',sans-serif; font-size: .75rem; font-weight: 600; padding: .125rem .5rem; border-radius: .25rem; }
+    /* Buttons */
+    .btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 focus:outline-none; }
+    .btn-primary { @apply btn text-white; background: var(--c-accent); }
+    .btn-primary:hover    { background: var(--c-accent-h); }
+    .btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-danger  { @apply btn text-white; background: var(--c-red); }
+    .btn-danger:hover { background: var(--c-red-h); }
+    .btn-ghost   { @apply btn text-gray-600 bg-transparent hover:bg-gray-100; }
 
-    .input-base {
-        width: 100%; border-radius: .5rem; border: 1px solid #d1d5db; font-size: .875rem;
-        box-shadow: 0 1px 2px rgba(0,0,0,.05); transition: border-color .15s, box-shadow .15s;
-        padding: .5rem .75rem; background: #fff;
+    /* Inputs */
+    .input {
+        @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition-all duration-150;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
-    .input-base:focus { outline: none; border-color: var(--c-accent); box-shadow: 0 0 0 2px rgba(124,58,237,.2); }
-    .input-error { border-color: var(--c-danger) !important; }
+    .input:focus { @apply outline-none; border-color: var(--c-accent); box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
+    .input-error { border-color: var(--c-red) !important; }
+
+    /* Cards */
+    .card { @apply bg-white rounded-xl border border-gray-200 shadow-sm; }
+    .card-body { @apply p-5; }
+
+    /* Table */
+    .tbl-wrap { @apply card overflow-hidden; }
+    .tbl { @apply w-full text-sm; }
+    .tbl thead { background: var(--c-th-bg); }
+    .tbl thead th { color: var(--c-th-txt); @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider; }
+    .tbl tbody { @apply divide-y divide-gray-100; }
+    .tbl tbody tr { transition: background .1s; }
+    .tbl tbody tr:hover { background: var(--c-tr-hover); }
+    .tbl tbody td { @apply px-4 py-3; }
+
+    /* Modal */
+    .modal-backdrop { @apply fixed inset-0 z-50 flex items-center justify-center p-4; background: rgba(0,0,0,0.45); backdrop-filter: blur(2px); }
+    .modal-box { @apply bg-white rounded-2xl shadow-2xl w-full; }
+    .modal-header { @apply px-6 py-4 flex items-center justify-between rounded-t-2xl; background: linear-gradient(to right, var(--c-modal-from), var(--c-modal-to)); }
+    .modal-header h3 { @apply text-base font-semibold text-white; }
+    .modal-body { @apply px-6 py-5 space-y-4; }
+    .modal-footer { @apply px-6 py-4 flex justify-end gap-2 bg-gray-50 rounded-b-2xl border-t border-gray-200; }
+
+    /* Badges */
+    .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; }
+    .badge-green  { @apply badge; background: var(--c-green-light); color: var(--c-green-text); }
+    .badge-red    { @apply badge bg-red-100 text-red-700; }
+    .badge-gray   { @apply badge bg-gray-100 text-gray-600; }
+    .badge-purple { @apply badge; background: var(--c-accent-light); color: var(--c-accent-text); }
+    .badge-amber  { @apply badge bg-amber-100 text-amber-700; }
+    .badge-blue   { @apply badge bg-blue-100 text-blue-700; }
+    .badge-code   { @apply badge; background: var(--c-green-light); color: var(--c-green-text); font-family: 'Plus Jakarta Sans', monospace; font-weight: 600; }
+
+    /* Form label */
+    .form-label { @apply block text-xs font-medium text-gray-700 mb-1; }
+    .form-error { @apply text-red-500 text-xs mt-1; }
+
+    /* Section label in sidebar */
+    .sb-section { @apply px-3 pt-5 pb-1.5 text-[9px] uppercase tracking-widest font-semibold; color: var(--c-sb-muted); }
+
+    /* Page header */
+    .page-header { @apply flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5; }
 }

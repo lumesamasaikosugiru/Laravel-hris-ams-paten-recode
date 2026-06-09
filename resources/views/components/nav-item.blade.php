@@ -1,10 +1,10 @@
-@props(['route', 'label', 'icon' => null])
+@props(['route', 'label'])
+
 @php $active = request()->routeIs($route) || request()->routeIs($route.'.*'); @endphp
+
 <a href="{{ route($route) }}" class="nav-link {{ $active ? 'active' : '' }}">
-    @if($icon)
-        <span class="shrink-0 w-4 h-4">{!! $icon !!}</span>
-    @else
-        <span class="shrink-0 w-1.5 h-1.5 rounded-full {{ $active ? 'bg-green-400' : 'bg-white/25' }}"></span>
-    @endif
+    <span class="shrink-0 w-4 h-4 flex items-center justify-center">
+        {{ $icon ?? '' }}
+    </span>
     <span>{{ $label }}</span>
 </a>

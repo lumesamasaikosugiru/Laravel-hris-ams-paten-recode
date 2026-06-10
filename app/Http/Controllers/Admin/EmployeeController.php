@@ -45,7 +45,6 @@ class EmployeeController extends Controller
         $sheet       = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Template Pegawai');
 
-        // ── Header ────────────────────────────────────────────
         $headers = [
             'A1' => 'NIK',
             'B1' => 'Nama Lengkap',
@@ -68,7 +67,6 @@ class EmployeeController extends Controller
             $sheet->setCellValue($cell, $value);
         }
 
-        // Style header
         $sheet->getStyle('A1:O1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1a1040']],
@@ -76,30 +74,28 @@ class EmployeeController extends Controller
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'AAAAAA']]],
         ]);
 
-        // Auto width
-        foreach (range('A', 'O') as $col) {
+        foreach (range('A','O') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
         $sheet->getRowDimension(1)->setRowHeight(20);
 
-        // ── Contoh data ───────────────────────────────────────
         $schools     = School::active()->get();
         $departments = Department::active()->get();
         $positions   = Position::active()->get();
 
         $examples = [
-            ['NIPY-001', 'Ahmad Fauzi', 'male', 'Jakarta', '1990-05-15', 's1',
+            ['NIPY-001','Ahmad Fauzi','male','Jakarta','1990-05-15','s1',
              '081234567890', $schools->first()?->name ?? 'SMK Fatahillah',
-             now()->format('Y-m-d'), 'permanent', 'tidak',
+             now()->format('Y-m-d'),'permanent','tidak',
              $departments->first()?->name ?? 'Kurikulum & Pengajaran',
              $positions->first()?->name ?? 'Guru',
-             'ahmad@email.com', 'Jl. Contoh No. 1 Jakarta'],
-            ['NIPY-002', 'Siti Rahma', 'female', 'Bandung', '1992-08-20', 's1',
+             'ahmad@email.com','Jl. Contoh No. 1 Jakarta'],
+            ['NIPY-002','Siti Rahma','female','Bandung','1992-08-20','s1',
              '089876543210', $schools->first()?->name ?? 'SMK Fatahillah',
-             now()->format('Y-m-d'), 'contract', 'ya',
+             now()->format('Y-m-d'),'contract','ya',
              $departments->first()?->name ?? 'Tata Usaha',
              $positions->skip(1)->first()?->name ?? 'Staf Tata Usaha',
-             'siti@email.com', 'Jl. Contoh No. 2 Bandung'],
+             'siti@email.com','Jl. Contoh No. 2 Bandung'],
         ];
 
         foreach ($examples as $idx => $row) {
@@ -108,48 +104,33 @@ class EmployeeController extends Controller
                 $col = chr(65 + $colIdx);
                 $sheet->setCellValue("{$col}{$rowNum}", $value);
             }
-            // Style example rows
             $sheet->getStyle("A{$rowNum}:O{$rowNum}")->applyFromArray([
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F5F3FF']],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'DDDDDD']]],
             ]);
         }
 
-        // ── Sheet referensi Sekolah ───────────────────────────
+        // Sheet referensi
         $refSheet = $spreadsheet->createSheet();
         $refSheet->setTitle('Referensi');
-        $refSheet->setCellValue('A1', 'Nama Sekolah (copy persis ke kolom H)');
-        $refSheet->setCellValue('B1', 'Nama Departemen (copy persis ke kolom L)');
-        $refSheet->setCellValue('C1', 'Nama Jabatan (copy persis ke kolom M)');
-
+        $refSheet->setCellValue('A1', 'Nama Sekolah');
+        $refSheet->setCellValue('B1', 'Nama Departemen');
+        $refSheet->setCellValue('C1', 'Nama Jabatan');
         $refSheet->getStyle('A1:C1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '7c3aed']],
         ]);
+        $row = 2;
+        foreach ($schools as $s) { $refSheet->setCellValue("A{$row}", $s->name); $row++; }
+        $row = 2;
+        foreach ($departments as $d) { $refSheet->setCellValue("B{$row}", $d->name); $row++; }
+        $row = 2;
+        foreach ($positions as $p) { $refSheet->setCellValue("C{$row}", $p->name); $row++; }
+        foreach (['A','B','C'] as $col) { $refSheet->getColumnDimension($col)->setAutoSize(true); }
 
-        $row = 2;
-        foreach ($schools as $s) {
-            $refSheet->setCellValue("A{$row}", $s->name);
-            $row++;
-        }
-        $row = 2;
-        foreach ($departments as $d) {
-            $refSheet->setCellValue("B{$row}", $d->name);
-            $row++;
-        }
-        $row = 2;
-        foreach ($positions as $p) {
-            $refSheet->setCellValue("C{$row}", $p->name);
-            $row++;
-        }
-        foreach (['A','B','C'] as $col) {
-            $refSheet->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        // ── Download ──────────────────────────────────────────
         $spreadsheet->setActiveSheetIndex(0);
         $writer   = new Xlsx($spreadsheet);
-        $filename = 'template-import-pegawai-' . now()->format('Ymd') . '.xlsx';
+        $filename = 'template-import-pegawai-'.now()->format('Ymd').'.xlsx';
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\JobController;
 use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\AttendanceController;
+use App\Http\Controllers\Admin\LeaveController;
 use App\Http\Controllers\Public\CareerController;
 
 Route::get('/', fn() => redirect()->route('careers.index'));
@@ -37,20 +38,18 @@ Route::middleware('auth')->group(function () {
         Route::resource('applicants', ApplicantController::class)->only(['index']);
 
         // Kepegawaian
-        Route::get('employees/import',   [EmployeeController::class, 'import'])
-            ->name('employees.import');
-        Route::get('employees/template', [EmployeeController::class, 'downloadTemplate'])
-            ->name('employees.template');
-        Route::resource('employees', EmployeeController::class)
-            ->only(['index','create','edit','show']);
+        Route::get('employees/import',   [EmployeeController::class, 'import'])->name('employees.import');
+        Route::get('employees/template', [EmployeeController::class, 'downloadTemplate'])->name('employees.template');
+        Route::resource('employees', EmployeeController::class)->only(['index','create','edit','show']);
 
         // Absensi
-        Route::get('attendance',         [AttendanceController::class, 'index'])
-            ->name('attendance.index');
-        Route::get('attendance/report',  [AttendanceController::class, 'report'])
-            ->name('attendance.report');
-        Route::get('attendance/export',  [AttendanceController::class, 'export'])
-            ->name('attendance.export');
+        Route::get('attendance',        [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('attendance/report', [AttendanceController::class, 'report'])->name('attendance.report');
+        Route::get('attendance/export', [AttendanceController::class, 'export'])->name('attendance.export');
+
+        // Cuti & Izin
+        Route::get('leaves',         [LeaveController::class, 'index'])->name('leaves.index');
+        Route::get('leaves/balance', [LeaveController::class, 'balance'])->name('leaves.balance');
     });
 
 });

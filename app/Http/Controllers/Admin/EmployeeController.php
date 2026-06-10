@@ -42,7 +42,7 @@ class EmployeeController extends Controller
     public function downloadTemplate()
     {
         $spreadsheet = new Spreadsheet();
-        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Template Pegawai');
 
         $headers = [
@@ -74,28 +74,50 @@ class EmployeeController extends Controller
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'AAAAAA']]],
         ]);
 
-        foreach (range('A','O') as $col) {
+        foreach (range('A', 'O') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
         $sheet->getRowDimension(1)->setRowHeight(20);
 
-        $schools     = School::active()->get();
+        $schools = School::active()->get();
         $departments = Department::active()->get();
-        $positions   = Position::active()->get();
+        $positions = Position::active()->get();
 
         $examples = [
-            ['NIPY-001','Ahmad Fauzi','male','Jakarta','1990-05-15','s1',
-             '081234567890', $schools->first()?->name ?? 'SMK Fatahillah',
-             now()->format('Y-m-d'),'permanent','tidak',
-             $departments->first()?->name ?? 'Kurikulum & Pengajaran',
-             $positions->first()?->name ?? 'Guru',
-             'ahmad@email.com','Jl. Contoh No. 1 Jakarta'],
-            ['NIPY-002','Siti Rahma','female','Bandung','1992-08-20','s1',
-             '089876543210', $schools->first()?->name ?? 'SMK Fatahillah',
-             now()->format('Y-m-d'),'contract','ya',
-             $departments->first()?->name ?? 'Tata Usaha',
-             $positions->skip(1)->first()?->name ?? 'Staf Tata Usaha',
-             'siti@email.com','Jl. Contoh No. 2 Bandung'],
+            [
+                'NIPY-001',
+                'Ahmad Fauzi',
+                'male',
+                'Jakarta',
+                '1990-05-15',
+                's1',
+                '081234567890',
+                $schools->first()?->name ?? 'SMK Fatahillah',
+                now()->format('Y-m-d'),
+                'permanent',
+                'tidak',
+                $departments->first()?->name ?? 'Kurikulum & Pengajaran',
+                $positions->first()?->name ?? 'Guru',
+                'ahmad@email.com',
+                'Jl. Contoh No. 1 Jakarta'
+            ],
+            [
+                'NIPY-002',
+                'Siti Rahma',
+                'female',
+                'Bandung',
+                '1992-08-20',
+                's1',
+                '089876543210',
+                $schools->first()?->name ?? 'SMK Fatahillah',
+                now()->format('Y-m-d'),
+                'contract',
+                'ya',
+                $departments->first()?->name ?? 'Tata Usaha',
+                $positions->skip(1)->first()?->name ?? 'Staf Tata Usaha',
+                'siti@email.com',
+                'Jl. Contoh No. 2 Bandung'
+            ],
         ];
 
         foreach ($examples as $idx => $row) {
@@ -121,16 +143,27 @@ class EmployeeController extends Controller
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '7c3aed']],
         ]);
         $row = 2;
-        foreach ($schools as $s) { $refSheet->setCellValue("A{$row}", $s->name); $row++; }
+        foreach ($schools as $s) {
+            $refSheet->setCellValue("A{$row}", $s->name);
+            $row++;
+        }
         $row = 2;
-        foreach ($departments as $d) { $refSheet->setCellValue("B{$row}", $d->name); $row++; }
+        foreach ($departments as $d) {
+            $refSheet->setCellValue("B{$row}", $d->name);
+            $row++;
+        }
         $row = 2;
-        foreach ($positions as $p) { $refSheet->setCellValue("C{$row}", $p->name); $row++; }
-        foreach (['A','B','C'] as $col) { $refSheet->getColumnDimension($col)->setAutoSize(true); }
+        foreach ($positions as $p) {
+            $refSheet->setCellValue("C{$row}", $p->name);
+            $row++;
+        }
+        foreach (['A', 'B', 'C'] as $col) {
+            $refSheet->getColumnDimension($col)->setAutoSize(true);
+        }
 
         $spreadsheet->setActiveSheetIndex(0);
-        $writer   = new Xlsx($spreadsheet);
-        $filename = 'template-import-pegawai-'.now()->format('Ymd').'.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'template-import-pegawai-' . now()->format('Ymd') . '.xlsx';
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');

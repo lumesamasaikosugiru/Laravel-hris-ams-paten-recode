@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\LeaveController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Public\CareerController;
 
 Route::get('/', fn() => redirect()->route('careers.index'));
@@ -50,6 +51,13 @@ Route::middleware('auth')->group(function () {
         // Cuti & Izin
         Route::get('leaves',         [LeaveController::class, 'index'])->name('leaves.index');
         Route::get('leaves/balance', [LeaveController::class, 'balance'])->name('leaves.balance');
+
+        // Laporan
+        Route::get('reports',             [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/employees',   [ReportController::class, 'employees'])->name('reports.employees');
+        Route::get('reports/recruitment', [ReportController::class, 'recruitment'])->name('reports.recruitment');
+        Route::get('reports/probation',   [ReportController::class, 'probation'])->name('reports.probation');
+        Route::get('reports/leaves',      [ReportController::class, 'leaves'])->name('reports.leaves');
     });
 
 });

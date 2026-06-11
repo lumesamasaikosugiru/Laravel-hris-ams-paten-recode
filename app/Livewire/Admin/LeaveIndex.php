@@ -1,6 +1,7 @@
 <?php
 namespace App\Livewire\Admin;
 
+use App\Services\LeaveService;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -31,6 +32,7 @@ class LeaveIndex extends Component
     public int|string $leave_type_id = '';
     public string $start_date = '';
     public string $end_date = '';
+    public string $maxEndDate = ''; //batasi kuota cuti
     public string $reason = '';
     public $document_file = null;
     public int $calculatedDays = 0;
@@ -66,6 +68,9 @@ class LeaveIndex extends Component
     // ── Employee search ───────────────────────────────────────
     public function updatedLeaveTypeId(): void
     {
+        $this->updateMaxEndDate();
+        $this->updatedStartDate(); // recalc days
+
         if (!$this->selectedEmployeeId || !$this->leave_type_id)
             return;
         $balance = LeaveBalance::where('employee_id', $this->selectedEmployeeId)
@@ -79,10 +84,27 @@ class LeaveIndex extends Component
 
     public function updatedStartDate(): void
     {
+        $this->updateMaxEndDate();
         $this->recalcDays();
     }
-    public function updatedEndDate(): void
+    private function updateMaxEndDate(): void
     {
+        if (!$this->start_date || !$this->leave_type_id) {
+            $this->maxEndDate = '';
+            return;
+        }
+
+        $lt = LeaveType::find($this->leave_type_id);
+        $quota = $this->selectedBalance
+            ? $this->selectedBalance['remaining']
+            : ($lt?->quota ?? 1);
+
+        $this->maxEndDate = LeaveService::calcMaxEndDate($this->start_date, $quota);
+
+        if ($this->end_date && $this->end_date > $this->maxEndDate) {
+            $this->end_date = $this->maxEndDate;
+        }
+
         $this->recalcDays();
     }
 
@@ -121,7 +143,7 @@ class LeaveIndex extends Component
             'selectedEmployeeId' => 'required|exists:employees,id',
             'leave_type_id' => 'required|exists:leave_types,id',
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date',
             'reason' => 'required|string|min:10|max:500',
             'document_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ], [
@@ -129,19 +151,30 @@ class LeaveIndex extends Component
             'leave_type_id.required' => 'Pilih jenis cuti.',
             'start_date.required' => 'Tanggal mulai wajib diisi.',
             'end_date.required' => 'Tanggal selesai wajib diisi.',
-            'end_date.after_or_equal' => 'Tanggal selesai harus sama atau setelah tanggal mulai.',
             'reason.required' => 'Alasan cuti wajib diisi.',
             'reason.min' => 'Alasan minimal 10 karakter.',
         ]);
 
-        $days = LeaveRequest::countWorkDays($this->start_date, $this->end_date);
+        $employee = Employee::findOrFail($this->selectedEmployeeId);
+        $leaveType = LeaveType::findOrFail($this->leave_type_id);
 
-        // Cek saldo
-        if ($this->selectedBalance && $days > $this->selectedBalance['remaining']) {
-            $this->addError('days', "Sisa saldo tidak cukup. Sisa: {$this->selectedBalance['remaining']} hari, diajukan: {$days} hari.");
+        // Validasi aturan bisnis via Service
+        $errors = LeaveService::validate(
+            $employee,
+            $leaveType,
+            $this->start_date,
+            $this->end_date,
+            $this->selectedBalance
+        );
+
+        if (!empty($errors)) {
+            foreach ($errors as $field => $message) {
+                $this->addError($field, $message);
+            }
             return;
         }
 
+        $days = LeaveRequest::countWorkDays($this->start_date, $this->end_date);
         $docPath = null;
         if ($this->document_file) {
             $docPath = $this->document_file->store('leaves/documents', 'public');
@@ -268,7 +301,11 @@ class LeaveIndex extends Component
             'rejected' => LeaveRequest::where('status', 'rejected')->whereYear('start_date', now()->year)->count(),
         ];
 
-        $leaveTypes = LeaveType::active()->orderBy('name')->get();
+        $employee = $this->selectedEmployeeId ? Employee::find($this->selectedEmployeeId) : null;
+
+        $leaveTypes = LeaveType::active()->orderBy('name')->get()
+            ->filter(fn($lt) => !$employee || LeaveService::isLeaveTypeAllowed($lt, $employee))
+            ->values();
         $schools = School::active()->orderBy('name')->get();
         $viewing = $this->viewingId
             ? LeaveRequest::with(['employee.school', 'leaveType', 'approvedBy'])->find($this->viewingId)

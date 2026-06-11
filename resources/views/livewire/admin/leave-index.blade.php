@@ -287,6 +287,11 @@
                             <label class="form-label">Tanggal Mulai <span class="text-red-500">*</span></label>
                             <input wire:model.live="start_date" type="date"
                                 class="input @error('start_date') input-error @enderror">
+                            <p class="text-xs text-gray-400 mt-1">
+                                Pengajuan minimal H-{{ \App\Services\LeaveService::MIN_DAYS_BEFORE }}.
+                                Paling cepat:
+                                <strong>{{ \Carbon\Carbon::parse(\App\Services\LeaveService::minStartDate())->translatedFormat('d M Y') }}</strong>
+                            </p>
                             @error('start_date')
                                 <p class="form-error">{{ $message }}</p>
                             @enderror
@@ -294,10 +299,18 @@
                         <div>
                             <label class="form-label">Tanggal Selesai <span class="text-red-500">*</span></label>
                             <input wire:model.live="end_date" type="date"
-                                class="input @error('end_date') input-error @enderror">
+                                class="input @error('end_date') input-error @enderror" min="{{ $start_date }}"
+                                max="{{ $maxEndDate }}">
                             @error('end_date')
                                 <p class="form-error">{{ $message }}</p>
                             @enderror
+
+                            @if ($maxEndDate && $leave_type_id)
+                                <p class="text-xs text-amber-600 mt-1">
+                                    Maksimal hingga {{ \Carbon\Carbon::parse($maxEndDate)->translatedFormat('d M Y') }}
+                                    (berdasarkan sisa saldo)
+                                </p>
+                            @endif
                         </div>
                     </div>
 

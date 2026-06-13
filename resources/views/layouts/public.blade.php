@@ -9,13 +9,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body class="bg-gray-50 min-h-screen flex flex-col">
 
-    {{-- Navbar --}}
     <nav class="bg-sidebar shadow-md sticky top-0 z-40">
         <div class="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between">
             <a href="{{ route('careers.index') }}" class="flex items-center gap-2.5">
@@ -44,12 +43,10 @@
         </div>
     </nav>
 
-    {{-- Content --}}
     <main class="flex-1">
         @yield('content')
     </main>
 
-    {{-- Footer --}}
     <footer class="bg-white border-t border-gray-200 py-6 mt-12">
         <p class="text-center text-xs text-gray-400">
             &copy; {{ now()->year }} Yayasan Fatahillah. Sistem Rekrutmen Online.

@@ -317,13 +317,13 @@ class LeaveIndex extends Component
 
         // Sama persis dengan cara di attendance yang berhasil
         $employees = Employee::whereIn('status', ['active', 'probation'])
-            ->whereNotIn('id', $pendingEmployeeIds)
             ->orderBy('name')->get()
             ->map(fn($e) => [
                 'id' => $e->id,
                 'name' => $e->name,
                 'code' => $e->nipy ?? $e->nik,
                 'gender' => $e->gender,
+                'is_guru' => $e->is_guru,
             ])->values()->toArray();
 
         return view(

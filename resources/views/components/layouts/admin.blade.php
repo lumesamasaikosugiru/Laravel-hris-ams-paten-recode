@@ -301,7 +301,29 @@
         });
     </script>
 
+    {{-- Close Modals by ESC keyboards --}}
+    <script>
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Escape') return;
+
+            Livewire.all().forEach(function(comp) {
+                try {
+                    const data = comp.snapshot.data;
+                    if (!data) return;
+                    Object.keys(data).forEach(function(key) {
+                        if (key.startsWith('show') && key.includes('Modal')) {
+                            if (data[key] === true) {
+                                comp.$wire.set(key, false);
+                            }
+                        }
+                    });
+                } catch (err) {}
+            });
+        });
+    </script>
+
     @livewireScripts
+
 </body>
 
 </html>

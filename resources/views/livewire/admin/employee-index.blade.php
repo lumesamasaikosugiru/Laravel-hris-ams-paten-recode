@@ -83,7 +83,8 @@
             </thead>
             <tbody>
                 @forelse($employees as $emp)
-                    <tr>
+                    <tr onclick="window.location='{{ route('admin.employees.show', $emp) }}'"
+                        class="cursor-pointer hover:bg-violet-50 transition-colors">
                         <td class="text-gray-400 text-xs">{{ $employees->firstItem() + $loop->index }}</td>
                         <td>
                             <div class="flex items-center gap-3">

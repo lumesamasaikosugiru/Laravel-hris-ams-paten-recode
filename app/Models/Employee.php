@@ -55,6 +55,9 @@ class Employee extends Model
         'probation_evaluated_at' => 'date',
     ];
 
+    // Usia pensiun
+    const RETIREMENT_AGE = 60;
+
     public function user()
     {
         return $this->belongsTo(\App\Models\User::class);
@@ -147,5 +150,32 @@ class Employee extends Model
     public function getLastEducationLabelAttribute(): string
     {
         return match ($this->last_education) { 'sd' => 'SD', 'smp' => 'SMP', 'sma' => 'SMA/SMK', 'd3' => 'D3', 's1' => 'S1', 's2' => 'S2', 's3' => 'S3', default => '-'};
+    }
+
+    //pensiun
+    public function getAgeAttribute(): ?int
+    {
+        return $this->date_of_birth
+            ? $this->date_of_birth->age
+            : null;
+    }
+
+    public function getRetirementDateAttribute(): ?\Carbon\Carbon
+    {
+        return $this->date_of_birth
+            ? $this->date_of_birth->copy()->addYears(self::RETIREMENT_AGE)
+            : null;
+    }
+
+    public function getYearsToRetirementAttribute(): ?int
+    {
+        return $this->retirement_date
+            ? (int) now()->diffInYears($this->retirement_date, false)
+            : null;
+    }
+
+    public function getIsRetiredAttribute(): bool
+    {
+        return $this->age !== null && $this->age >= self::RETIREMENT_AGE;
     }
 }

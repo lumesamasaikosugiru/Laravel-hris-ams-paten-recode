@@ -155,7 +155,41 @@
                             </span>
                         </div>
                     @endif
+
                 </div>
+                {{-- Setelah baris info NIK/Tipe/Peran/Tanggal Masuk --}}
+                @if ($employee->date_of_birth)
+                    <div class="flex flex-wrap gap-4 mt-3 pt-3 border-t border-gray-100 text-xs">
+                        <div>
+                            <span class="text-gray-400 block">Usia</span>
+                            <span class="font-medium text-gray-700">{{ $employee->age }} tahun</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 block">Tanggal Pensiun</span>
+                            <span class="font-medium {{ $employee->is_retired ? 'text-red-600' : 'text-gray-700' }}">
+                                {{ $employee->retirement_date->translatedFormat('d M Y') }}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 block">Status Pensiun</span>
+                            @if ($employee->is_retired)
+                                <span class="badge-red">Sudah Pensiun</span>
+                            @elseif($employee->years_to_retirement <= 1)
+                                <span class="badge bg-orange-100 text-orange-700">
+                                    Pensiun {{ $employee->retirement_date->diffForHumans() }}
+                                </span>
+                            @elseif($employee->years_to_retirement <= 3)
+                                <span class="badge bg-yellow-100 text-yellow-700">
+                                    {{ $employee->years_to_retirement }} tahun lagi
+                                </span>
+                            @else
+                                <span class="font-medium text-gray-700">
+                                    {{ $employee->years_to_retirement }} tahun lagi
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

@@ -190,6 +190,7 @@ class EmployeeForm extends Component
         try {
             $this->validate();
         } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('EmployeeForm validation failed: ' . json_encode($e->errors()));
             $tabFields = [
                 'identity' => [
                     'nik',
@@ -320,6 +321,8 @@ class EmployeeForm extends Component
                 session()->flash('success', "{$this->name} berhasil ditambahkan.");
             }
         });
+        \Log::info('EmployeeForm save completed, employeeId: ' . $employeeId);
+        $this->redirect(route('admin.employees.show', $employeeId));
 
         // Redirect ke halaman detail pegawai
         $this->redirect(route('admin.employees.show', $employeeId));

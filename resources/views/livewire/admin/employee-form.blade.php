@@ -21,6 +21,15 @@
         {{-- ══ TAB: Identitas ══ --}}
         @if ($activeTab === 'identity')
             <div class="p-6 space-y-4">
+                {{-- Error summary — tampil di semua tab --}}
+                @if ($errors->any())
+                    <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p class="text-xs font-semibold text-red-600 mb-1">Mohon perbaiki kesalahan berikut:</p>
+                        @foreach ($errors->all() as $error)
+                            <p class="text-xs text-red-500">· {{ $error }}</p>
+                        @endforeach
+                    </div>
+                @endif
                 {{-- Foto --}}
                 <div class="flex items-center gap-5">
                     <div
@@ -64,8 +73,12 @@
                     </div>
                     <div>
                         <label class="form-label">NIK KTP</label>
-                        <input wire:model="national_id" type="text" class="input" placeholder="16 digit NIK KTP"
-                            maxlength="16">
+                        <input wire:model="national_id" type="text"
+                            class="input @error('national_id') input-error @enderror" placeholder="16 digit NIK KTP"
+                            maxlength="16" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                        @error('national_id')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
@@ -169,6 +182,15 @@
         {{-- ══ TAB: Kepegawaian ══ --}}
         @if ($activeTab === 'employment')
             <div class="p-6 space-y-4">
+                {{-- Error summary — tampil di semua tab --}}
+                @if ($errors->any())
+                    <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p class="text-xs font-semibold text-red-600 mb-1">Mohon perbaiki kesalahan berikut:</p>
+                        @foreach ($errors->all() as $error)
+                            <p class="text-xs text-red-500">· {{ $error }}</p>
+                        @endforeach
+                    </div>
+                @endif
                 <div>
                     <label class="form-label">Unit / Sekolah <span class="text-red-500">*</span></label>
                     <select wire:model.live="school_id" class="input @error('school_id') input-error @enderror">
@@ -245,6 +267,15 @@
         {{-- ══ TAB: Pendidikan ══ --}}
         @if ($activeTab === 'education')
             <div class="p-6 space-y-4">
+                {{-- Error summary — tampil di semua tab --}}
+                @if ($errors->any())
+                    <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p class="text-xs font-semibold text-red-600 mb-1">Mohon perbaiki kesalahan berikut:</p>
+                        @foreach ($errors->all() as $error)
+                            <p class="text-xs text-red-500">· {{ $error }}</p>
+                        @endforeach
+                    </div>
+                @endif
                 <div>
                     <label class="form-label">Pendidikan Terakhir</label>
                     <select wire:model="last_education" class="input">
@@ -274,6 +305,15 @@
         @if ($activeTab === 'assignment')
             @if ($isEdit)
                 <div class="p-6 text-center py-10">
+                    {{-- Error summary — tampil di semua tab --}}
+                    @if ($errors->any())
+                        <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p class="text-xs font-semibold text-red-600 mb-1">Mohon perbaiki kesalahan berikut:</p>
+                            @foreach ($errors->all() as $error)
+                                <p class="text-xs text-red-500">· {{ $error }}</p>
+                            @endforeach
+                        </div>
+                    @endif
                     <svg class="w-10 h-10 text-gray-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24"
                         stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -355,10 +395,9 @@
                     <button wire:click="prevTab" class="btn-ghost">← Sebelumnya</button>
                 @endif
 
-                @if ($activeTab !== 'assignment')
+                @if (!$isEdit && $activeTab !== 'assignment')
                     <button wire:click="nextTab" class="btn-primary">Selanjutnya →</button>
                 @else
-                    {{-- Tombol simpan HANYA muncul di tab terakhir --}}
                     <button wire:click="save" wire:loading.attr="disabled" class="btn-primary">
                         <span wire:loading.remove wire:target="save">
                             {{ $isEdit ? 'Simpan Perubahan' : 'Tambah Pegawai' }}

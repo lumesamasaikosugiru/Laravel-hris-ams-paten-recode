@@ -35,6 +35,12 @@ class LeaveService
         ?array $balance
     ): array {
         $errors = [];
+        // 0. Pegawai probation tidak boleh mengajukan cuti
+        if ($employee->status === 'probation') {
+            $errors['selectedEmployeeId'] =
+                'Pegawai dalam masa percobaan tidak dapat mengajukan cuti.';
+            return $errors; // langsung return, tidak perlu cek yang lain
+        }
 
         // 1. Guru tidak boleh ambil jenis cuti tertentu
         if (

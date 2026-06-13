@@ -315,8 +315,8 @@ class LeaveIndex extends Component
             ->pluck('employee_id')
             ->toArray();
 
-        // Sama persis dengan cara di attendance yang berhasil
-        $employees = Employee::whereIn('status', ['active', 'probation'])
+        $employees = Employee::where('status', 'active') // ← hanya aktif, bukan probation
+            ->whereNotIn('id', $pendingEmployeeIds)
             ->orderBy('name')->get()
             ->map(fn($e) => [
                 'id' => $e->id,

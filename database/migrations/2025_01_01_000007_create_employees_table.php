@@ -4,7 +4,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void {
+    public function up(): void
+    {
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
@@ -16,11 +17,11 @@ return new class extends Migration {
             $table->string('nipy', 20)->unique()->nullable()->comment('NIPY resmi setelah lulus percobaan');
             $table->string('name');
             $table->string('national_id', 20)->nullable()->comment('NIK KTP');
-            $table->enum('gender', ['male','female']);
+            $table->enum('gender', ['male', 'female']);
             $table->string('place_of_birth')->nullable();
             $table->date('date_of_birth')->nullable();
-            $table->enum('religion', ['islam','kristen','katolik','hindu','buddha','konghucu'])->nullable();
-            $table->enum('marital_status', ['single','married','divorced','widowed'])->nullable();
+            $table->enum('religion', ['islam', 'kristen', 'katolik', 'hindu', 'buddha', 'konghucu'])->nullable();
+            $table->enum('marital_status', ['single', 'married', 'divorced', 'widowed'])->nullable();
             $table->string('nationality')->default('Indonesia');
 
             // Kontak
@@ -34,21 +35,21 @@ return new class extends Migration {
             // Kepegawaian
             $table->boolean('is_guru')->default(false);
             $table->date('join_date');
-            $table->enum('employee_type', ['permanent','contract','intern'])->default('contract');
+            $table->enum('employee_type', ['permanent', 'contract', 'intern'])->default('contract');
             $table->date('contract_start')->nullable();
             $table->date('contract_end')->nullable();
-            $table->enum('status', ['probation','active','inactive','resigned','terminated'])->default('probation');
+            $table->enum('status', ['probation', 'active', 'inactive', 'resigned', 'terminated'])->default('probation');
 
             // Masa percobaan
             $table->date('probation_start_date')->nullable();
             $table->date('probation_end_date')->nullable();
-            $table->enum('probation_status', ['on_probation','passed','failed','not_applicable'])->default('on_probation');
+            $table->enum('probation_status', ['on_probation', 'passed', 'failed', 'not_applicable'])->default('on_probation');
             $table->date('probation_evaluated_at')->nullable();
             $table->foreignId('probation_evaluated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->text('probation_notes')->nullable();
 
             // Pendidikan
-            $table->enum('last_education', ['sd','smp','sma','d3','s1','s2','s3'])->nullable();
+            $table->enum('last_education', ['sd', 'smp', 'sma', 'smk', 'd3', 's1', 's2', 's3'])->nullable();
             $table->string('last_education_major')->nullable();
             $table->string('last_education_institution')->nullable();
 
@@ -57,5 +58,8 @@ return new class extends Migration {
             $table->softDeletes();
         });
     }
-    public function down(): void { Schema::dropIfExists('employees'); }
+    public function down(): void
+    {
+        Schema::dropIfExists('employees');
+    }
 };

@@ -178,4 +178,36 @@ class Employee extends Model
     {
         return $this->age !== null && $this->age >= self::RETIREMENT_AGE;
     }
+
+    public function additionalAssignment()
+    {
+        return $this->hasOne(PositionAssignment::class)
+            ->where('is_active', true)
+            ->where('assignment_type', 'additional');
+    }
+
+    // Semua jabatan aktif (primary + additional)
+    public function activeAssignments()
+    {
+        return $this->hasMany(PositionAssignment::class)
+            ->where('is_active', true)
+            ->orderBy('assignment_type'); // primary dulu
+    }
+
+    // Cek apakah punya tugas tambahan
+    public function getHasAdditionalAssignmentAttribute(): bool
+    {
+        return $this->additionalAssignment()->exists();
+    }
+
+    // Semua unit yang terkait (induk + tambahan)
+    public function getAllSchoolsAttribute(): array
+    {
+        $schools = [$this->school_id];
+        $additional = $this->additionalAssignment;
+        if ($additional) {
+            $schools[] = $additional->school_id;
+        }
+        return array_unique($schools);
+    }
 }

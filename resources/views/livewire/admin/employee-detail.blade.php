@@ -309,7 +309,7 @@
                     </div>
                 @endif
             </div>
-
+            @livewire('admin.additional-assignment', ['employee' => $employee])
             {{-- Timeline Riwayat Jabatan --}}
             <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-5">

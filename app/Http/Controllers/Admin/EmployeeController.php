@@ -51,7 +51,7 @@ class EmployeeController extends Controller
             'C1' => 'Gender (male/female)',
             'D1' => 'Tempat Lahir',
             'E1' => 'Tanggal Lahir (YYYY-MM-DD)',
-            'F1' => 'Pendidikan (sd/smp/sma/d3/s1/s2/s3)',
+            'F1' => 'Pendidikan (sd/smp/sma/smk/d3/s1/s2/s3)',
             'G1' => 'No. HP',
             'H1' => 'Unit/Sekolah',
             'I1' => 'Tanggal Masuk (YYYY-MM-DD)',

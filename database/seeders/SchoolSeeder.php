@@ -9,9 +9,11 @@ class SchoolSeeder extends Seeder
     public function run(): void
     {
         $schools = [
-            ['code' => 'YF-PUSAT', 'name' => 'Yayasan Fatahillah (Pusat)',  'is_active' => true],
-            ['code' => 'SMK1-FTH', 'name' => 'SMK YP. Fatahillah 1 CLG',   'is_active' => true],
-            ['code' => 'SMK2-FTH', 'name' => 'SMK YP. Fatahillah 2 CLG',   'is_active' => true],
+            ['code' => 'YPFC', 'name' => 'YP. Fatahillah (Pusat)', 'is_active' => true],
+            ['code' => 'SMK1-KWT', 'name' => 'SMK YP. Fatahillah 1 Kramatwatu', 'is_active' => true],
+            ['code' => 'SMK1-CLG', 'name' => 'SMK YP. Fatahillah 1 Cilegon', 'is_active' => true],
+            ['code' => 'SMK2-CLG', 'name' => 'SMK YP. Fatahillah 2 Cilegon', 'is_active' => true],
+            ['code' => 'SMP-CLG', 'name' => 'SMP YP. Fatahillah Cilegon', 'is_active' => true],
         ];
 
         foreach ($schools as $school) {
@@ -21,6 +23,6 @@ class SchoolSeeder extends Seeder
             );
         }
 
-        $this->command->info('✅ Schools selesai! ('.School::count().' unit)');
+        $this->command->info('✅ Schools selesai! (' . School::count() . ' unit)');
     }
 }

@@ -10,52 +10,68 @@ class LeaveTypeSeeder extends Seeder
     {
         $leaveTypes = [
             [
-                'name'              => 'Cuti Tahunan',
-                'quota'             => 12,
-                'gender'            => 'all',
-                'cycle'             => 'annual',
+                'name' => 'Cuti Tahunan',
+                'quota' => 12,
+                'gender' => 'all',
+                'cycle' => 'annual',
                 'requires_document' => false,
-                'description'       => 'Cuti tahunan reguler. Tidak berlaku untuk Guru.',
+                'description' => 'Cuti tahunan reguler. Tidak berlaku untuk Guru.',
             ],
             [
-                'name'              => 'Cuti Sakit',
-                'quota'             => 90,
-                'gender'            => 'all',
-                'cycle'             => 'annual',
+                'name' => 'Cuti Sakit',
+                'quota' => 90,
+                'gender' => 'all',
+                'cycle' => 'annual',
                 'requires_document' => true,
-                'description'       => 'Wajib melampirkan surat keterangan dokter.',
+                'description' => 'Wajib melampirkan surat keterangan dokter.',
             ],
             [
-                'name'              => 'Cuti Melahirkan',
-                'quota'             => 90,
-                'gender'            => 'female',
-                'cycle'             => 'once',
+                'name' => 'Cuti Melahirkan',
+                'quota' => 90,
+                'gender' => 'female',
+                'cycle' => 'annual',
                 'requires_document' => true,
-                'description'       => 'Hanya untuk pegawai perempuan.',
+                'description' => 'Hanya untuk pegawai perempuan.',
             ],
             [
-                'name'              => 'Cuti Menikah',
-                'quota'             => 3,
-                'gender'            => 'all',
-                'cycle'             => 'once',
+                'name' => 'Cuti Menikah',
+                'quota' => 3,
+                'gender' => 'all',
+                'cycle' => 'annual',
                 'requires_document' => false,
-                'description'       => 'Cuti pernikahan pertama.',
+                'description' => 'Cuti pernikahan pertama.',
             ],
             [
-                'name'              => 'Cuti Duka',
-                'quota'             => 3,
-                'gender'            => 'all',
-                'cycle'             => 'annual',
+                'name' => 'Umroh',
+                'quota' => 12,
+                'gender' => 'all',
+                'cycle' => 'annual',
                 'requires_document' => false,
-                'description'       => 'Keluarga inti meninggal dunia.',
+                'description' => 'Wajib menyertakan dokumen terkait.',
             ],
             [
-                'name'              => 'Izin Tidak Masuk',
-                'quota'             => 5,
-                'gender'            => 'all',
-                'cycle'             => 'annual',
+                'name' => 'Haji',
+                'quota' => 40,
+                'gender' => 'all',
+                'cycle' => 'annual',
                 'requires_document' => false,
-                'description'       => 'Izin keperluan mendadak tanpa potong cuti tahunan.',
+                'description' => 'Wajib menyertakan dokumen terkait.',
+            ],
+            [
+                'name' => 'Cuti Duka',
+                'quota' => 3,
+                'gender' => 'all',
+                'cycle' => 'annual',
+                'requires_document' => false,
+                'description' => 'Keluarga inti meninggal dunia.',
+            ],
+            [
+                'name' => 'Izin Tidak Masuk',
+                'quota' => 5,
+                'gender' => 'all',
+                'cycle' => 'annual',
+                'requires_document' => false,
+                'description' => 'Izin keperluan mendadak tanpa potong cuti tahunan.',
             ],
         ];
 
@@ -66,6 +82,6 @@ class LeaveTypeSeeder extends Seeder
             );
         }
 
-        $this->command->info('✅ Leave Types selesai! ('.LeaveType::count().' jenis cuti)');
+        $this->command->info('✅ Leave Types selesai! (' . LeaveType::count() . ' jenis cuti)');
     }
 }

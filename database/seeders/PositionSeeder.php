@@ -10,18 +10,17 @@ class PositionSeeder extends Seeder
 {
     public function run(): void
     {
-        $yayasan = School::where('code', 'YF-PUSAT')->first();
-        $smk1    = School::where('code', 'SMK1-FTH')->first();
-        $smk2    = School::where('code', 'SMK2-FTH')->first();
+        $yayasan = School::where('code', 'YPFC')->first();
+        $smk1 = School::where('code', 'SMK1-CLG')->first();
+        $smk2 = School::where('code', 'SMK2-CLG')->first();
 
         // ── Jabatan Yayasan Pusat ─────────────────────────────
 
         // Dewan Yayasan
         $dewan = Department::where('school_id', $yayasan->id)->where('code', 'DEWAN')->first();
         foreach ([
-            ['Dewan Pembina',  5],
+            ['Dewan Pembina', 5],
             ['Dewan Pengawas', 5],
-            ['Ketua Yayasan',  5],
         ] as [$name, $level]) {
             Position::firstOrCreate(
                 ['school_id' => $yayasan->id, 'department_id' => $dewan->id, 'name' => $name],
@@ -32,10 +31,10 @@ class PositionSeeder extends Seeder
         // Pengurus YPFC
         $sekret = Department::where('school_id', $yayasan->id)->where('code', 'SEKRET')->first();
         foreach ([
+            ['Ketua Yayasan', 4],
             ['Sekretaris', 4],
-            ['Wakil Sekretaris', 3],
             ['Bendahara', 4],
-            ['Wakil Bendahara', 3],
+            ['Staf Bendahara', 1],
         ] as [$name, $level]) {
             Position::firstOrCreate(
                 ['school_id' => $yayasan->id, 'department_id' => $sekret->id, 'name' => $name],
@@ -47,7 +46,7 @@ class PositionSeeder extends Seeder
         $p2mp = Department::where('school_id', $yayasan->id)->where('code', 'P2MP')->first();
         foreach ([
             ['Kepala Bidang P2MP', 3],
-            ['Staf Bidang P2MP',   1],
+            ['Staf Bidang P2MP', 1],
         ] as [$name, $level]) {
             Position::firstOrCreate(
                 ['school_id' => $yayasan->id, 'department_id' => $p2mp->id, 'name' => $name],
@@ -59,7 +58,7 @@ class PositionSeeder extends Seeder
         $sdm = Department::where('school_id', $yayasan->id)->where('code', 'SDM')->first();
         foreach ([
             ['Kepala Bidang SDM & Umum', 3],
-            ['Staf Bidang SDM',          1],
+            ['Staf Bidang SDM', 1],
         ] as [$name, $level]) {
             Position::firstOrCreate(
                 ['school_id' => $yayasan->id, 'department_id' => $sdm->id, 'name' => $name],
@@ -71,7 +70,7 @@ class PositionSeeder extends Seeder
         $keu = Department::where('school_id', $yayasan->id)->where('code', 'KEU')->first();
         foreach ([
             ['Kepala Bidang Keuangan', 3],
-            ['Staf Bidang Keuangan',   1],
+            ['Staf Bidang Keuangan', 1],
         ] as [$name, $level]) {
             Position::firstOrCreate(
                 ['school_id' => $yayasan->id, 'department_id' => $keu->id, 'name' => $name],
@@ -83,7 +82,7 @@ class PositionSeeder extends Seeder
         $sarpras = Department::where('school_id', $yayasan->id)->where('code', 'SARPRAS')->first();
         foreach ([
             ['Kepala Bidang Sarana & Prasarana', 3],
-            ['Staf Bidang Sarpras',              1],
+            ['Staf Bidang Sarpras', 1],
         ] as [$name, $level]) {
             Position::firstOrCreate(
                 ['school_id' => $yayasan->id, 'department_id' => $sarpras->id, 'name' => $name],
@@ -95,7 +94,7 @@ class PositionSeeder extends Seeder
         $humas = Department::where('school_id', $yayasan->id)->where('code', 'HUMAS')->first();
         foreach ([
             ['Kepala Bidang Sosial & Humas', 3],
-            ['Staf Bidang Humas',            1],
+            ['Staf Bidang Humas', 1],
         ] as [$name, $level]) {
             Position::firstOrCreate(
                 ['school_id' => $yayasan->id, 'department_id' => $humas->id, 'name' => $name],
@@ -114,8 +113,8 @@ class PositionSeeder extends Seeder
             $tu = Department::where('school_id', $school->id)->where('code', 'TU')->first();
             foreach ([
                 ['Kepala Bagian Tata Usaha', 3],
-                ['Bendahara Sekolah',        2],
-                ['Staf Tata Usaha',          1],
+                ['Bendahara Sekolah', 2],
+                ['Staf Tata Usaha', 1],
             ] as [$name, $level]) {
                 Position::firstOrCreate(
                     ['school_id' => $school->id, 'department_id' => $tu->id, 'name' => $name],
@@ -125,13 +124,13 @@ class PositionSeeder extends Seeder
 
             $kur = Department::where('school_id', $school->id)->where('code', 'KUR')->first();
             foreach ([
-                ['Wakil Kepala Sekolah Bidang Kurikulum',  4],
-                ['Wakil Kepala Sekolah Bidang Kesiswaan',  4],
-                ['Wakil Kepala Sekolah Bidang Sarana',     4],
-                ['Wakil Kepala Sekolah Bidang Humas',      4],
-                ['Guru Tetap',                             2],
-                ['Guru Tidak Tetap',                       2],
-                ['Wali Kelas',                             2],
+                ['Wakil Kepala Sekolah Bidang Kurikulum', 4],
+                ['Wakil Kepala Sekolah Bidang Kesiswaan', 4],
+                ['Wakil Kepala Sekolah Bidang Sarana', 4],
+                ['Wakil Kepala Sekolah Bidang Humas', 4],
+                ['Guru Tetap', 2],
+                ['Guru Tidak Tetap', 2],
+                ['Wali Kelas', 2],
             ] as [$name, $level]) {
                 Position::firstOrCreate(
                     ['school_id' => $school->id, 'department_id' => $kur->id, 'name' => $name],
@@ -146,6 +145,6 @@ class PositionSeeder extends Seeder
             );
         }
 
-        $this->command->info('✅ Positions selesai! ('.Position::count().' jabatan)');
+        $this->command->info('✅ Positions selesai! (' . Position::count() . ' jabatan)');
     }
 }

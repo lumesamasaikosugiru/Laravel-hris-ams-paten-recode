@@ -117,40 +117,54 @@
 
                 {{-- ID Info --}}
                 <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-100 text-xs">
+
+                    {{-- NIK / NIPY / ID Sementara --}}
                     <div>
-                        <span class="text-gray-400 block">NIK / ID Sementara</span>
-                        <span class="font-mono font-medium text-gray-700">{{ $employee->nik }}</span>
-                    </div>
-                    @if ($employee->nipy)
-                        <div>
-                            <span class="text-gray-400 block">NIPY Resmi</span>
+                        @if ($employee->nipy)
+                            <span class="text-gray-400 block">NIPY</span>
                             <span class="font-mono font-bold text-violet-700">{{ $employee->nipy }}</span>
-                        </div>
-                    @endif
+                        @elseif ($employee->status === 'probation')
+                            <span class="text-gray-400 block">ID Sementara</span>
+                            <span class="font-mono font-medium text-amber-600">{{ $employee->nik }}</span>
+                            <span class="text-amber-500 block mt-0.5">Belum punya NIPY</span>
+                        @else
+                            <span class="text-gray-400 block">NIK</span>
+                            <span class="font-mono font-medium text-gray-700">{{ $employee->nik }}</span>
+                        @endif
+                    </div>
+
+                    {{-- Tipe --}}
                     <div>
                         <span class="text-gray-400 block">Tipe</span>
                         <span class="font-medium text-gray-700">{{ $employee->employee_type_label }}</span>
                     </div>
+
+                    {{-- Peran --}}
                     <div>
                         <span class="text-gray-400 block">Peran</span>
                         <span class="font-medium {{ $employee->is_guru ? 'text-violet-600' : 'text-gray-700' }}">
                             {{ $employee->role_label }}
                         </span>
                     </div>
+
+                    {{-- Tanggal Masuk --}}
                     <div>
                         <span class="text-gray-400 block">Tanggal Masuk</span>
                         <span class="font-medium text-gray-700">{{ $employee->join_date->format('d M Y') }}</span>
                     </div>
+
+                    {{-- Akhir Masa Percobaan (hanya saat probation) --}}
                     @if ($employee->status === 'probation' && $employee->probation_end_date)
                         <div>
-                            <span class="text-gray-400 block">Berakhir Percobaan</span>
+                            <span class="text-gray-400 block">Akhir Percobaan</span>
                             <span
                                 class="font-medium {{ $employee->is_probation_overdue ? 'text-red-600' : 'text-amber-600' }}">
                                 {{ $employee->probation_end_date->format('d M Y') }}
                                 @if ($employee->is_probation_overdue)
-                                    (Lewat!)
-                                @elseif($employee->probation_days_left !== null)
-                                    ({{ $employee->probation_days_left }} hari lagi)
+                                    <span class="text-red-500">(Lewat!)</span>
+                                @elseif ($employee->probation_days_left !== null)
+                                    <span class="text-amber-500">({{ $employee->probation_days_left }} hari
+                                        lagi)</span>
                                 @endif
                             </span>
                         </div>

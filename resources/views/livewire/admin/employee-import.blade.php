@@ -41,7 +41,7 @@
                     <p class="text-xs text-gray-400 mt-0.5">
                         <span class="text-green-600 font-medium">{{ collect($rows)->where('valid', true)->count() }}
                             valid</span>
-                        @php $invalidCount = collect($rows)->where('valid',false)->count(); @endphp
+                        @php $invalidCount = collect($rows)->where('valid', false)->count(); @endphp
                         @if ($invalidCount > 0)
                             · <span class="text-red-500 font-medium">{{ $invalidCount }} error</span>
                         @endif
@@ -64,26 +64,33 @@
                     <thead class="sticky top-0">
                         <tr>
                             <th class="w-8">Baris</th>
-                            <th>NIK</th>
+                            <th>NIPY</th>
                             <th>Nama</th>
                             <th>Unit</th>
                             <th>Jabatan</th>
                             <th>Tipe</th>
                             <th class="text-center">Status</th>
+                            <th class="text-center">Valid?</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($rows as $row)
                             <tr class="{{ !$row['valid'] ? 'bg-red-50' : '' }}">
                                 <td class="text-gray-400">{{ $row['row'] }}</td>
-                                <td class="font-mono">{{ $row['nik'] }}</td>
+                                <td class="font-mono">{{ $row['nipy'] }}</td>
                                 <td class="font-medium">{{ $row['name'] }}</td>
                                 <td>{{ $row['school_name'] }}</td>
                                 <td>{{ $row['pos_name'] }}</td>
                                 <td>{{ $row['employee_type'] }}</td>
                                 <td class="text-center">
+                                    <span
+                                        class="badge {{ $row['status'] === 'active' ? 'badge-green' : 'bg-yellow-100 text-yellow-700' }}">
+                                        {{ $row['status'] === 'active' ? 'Aktif' : 'Percobaan' }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
                                     @if ($row['valid'])
-                                        <span class="badge-green">Valid</span>
+                                        <span class="badge-green">✓</span>
                                     @else
                                         <div>
                                             <span class="badge-red">Error</span>
@@ -105,7 +112,6 @@
             {{-- Upload --}}
             <div class="card p-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Upload File Excel</h3>
-
                 <div
                     class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-violet-400 transition">
                     <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24"
@@ -116,11 +122,9 @@
                     <p class="text-sm font-medium text-gray-500 mb-1">Pilih file Excel</p>
                     <p class="text-xs text-gray-400 mb-4">Format .xlsx atau .xls · Maks. 5MB</p>
                     <input wire:model="file" type="file" accept=".xlsx,.xls"
-                        class="text-sm text-gray-500
-                              file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0
-                              file:text-xs file:font-medium
-                              file:bg-violet-50 file:text-violet-700
-                              hover:file:bg-violet-100 file:transition">
+                        class="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0
+                               file:text-xs file:font-medium file:bg-violet-50 file:text-violet-700
+                               hover:file:bg-violet-100 file:transition">
                     @if ($fileError)
                         <p class="form-error mt-2">{{ $fileError }}</p>
                     @endif
@@ -145,10 +149,12 @@
                 </div>
 
                 <div class="space-y-2 text-xs text-gray-600">
-                    @foreach ([['A', 'NIK *', 'Wajib · unik per pegawai'], ['B', 'Nama *', 'Wajib · nama lengkap'], ['C', 'Gender *', 'Wajib · isi: male / female'], ['D', 'Tempat Lahir', 'Opsional'], ['E', 'Tanggal Lahir', 'Opsional · format: YYYY-MM-DD'], ['F', 'Pendidikan', 'Opsional · sd/smp/sma/d3/s1/s2/s3'], ['G', 'No. HP', 'Opsional'], ['H', 'Unit/Sekolah *', 'Wajib · harus sama persis dengan nama di sistem'], ['I', 'Tanggal Masuk *', 'Wajib · format: YYYY-MM-DD'], ['J', 'Tipe Pegawai', 'permanent / contract / intern'], ['K', 'Guru?', 'ya / tidak'], ['L', 'Departemen *', 'Wajib · harus sama persis dengan nama di sistem'], ['M', 'Jabatan *', 'Wajib · harus sama persis dengan nama di sistem'], ['N', 'Email', 'Opsional'], ['O', 'Alamat', 'Opsional']] as [$col, $label, $desc])
+                    @foreach ([['A', 'NIPY *', 'Wajib · NIPY resmi pegawai, unik per pegawai'], ['B', 'NIK KTP', 'Opsional · 16 digit nomor KTP'], ['C', 'Nama Lengkap *', 'Wajib · nama lengkap pegawai'], ['D', 'Gender *', 'Wajib · isi: male / female'], ['E', 'Tempat Lahir', 'Opsional'], ['F', 'Tanggal Lahir', 'Opsional · format: YYYY-MM-DD'], ['G', 'Pendidikan', 'Opsional · sd/smp/sma/smk/d3/s1/s2/s3'], ['H', 'No. HP', 'Opsional'], ['I', 'Unit/Sekolah *', 'Wajib · harus sama persis dengan nama di sistem'], ['J', 'Tanggal Masuk *', 'Wajib · format: YYYY-MM-DD'], ['K', 'Tipe Pegawai', 'permanent / contract / intern'], ['L', 'Status *', 'Wajib · active / probation'], ['M', 'Guru?', 'ya / tidak'], ['N', 'Departemen *', 'Wajib · harus sama persis dengan nama di sistem'], ['O', 'Jabatan *', 'Wajib · harus sama persis dengan nama di sistem'], ['P', 'Email', 'Opsional'], ['Q', 'Alamat', 'Opsional']] as [$col, $label, $desc])
                         <div class="flex items-start gap-2">
                             <span
-                                class="shrink-0 w-6 h-5 rounded bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center">{{ $col }}</span>
+                                class="shrink-0 w-6 h-5 rounded bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center">
+                                {{ $col }}
+                            </span>
                             <div>
                                 <span class="font-medium text-gray-700">{{ $label }}</span>
                                 <span class="text-gray-400 ml-1">— {{ $desc }}</span>
@@ -159,7 +165,7 @@
 
                 <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
                     Nama Sekolah, Departemen, dan Jabatan harus sama persis dengan yang terdaftar di Master Data.
-                    Download template untuk melihat contoh pengisian.
+                    Download template untuk melihat contoh pengisian dan daftar referensi.
                 </div>
             </div>
         </div>

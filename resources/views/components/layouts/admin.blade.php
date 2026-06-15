@@ -53,21 +53,20 @@
             {{-- Navigation --}}
             <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
 
-                {{-- Dashboard --}}
-                <a href="{{ route('dashboard') }}"
-                    class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
+                @can('dashboard.view')
+                    <a href="{{ route('dashboard') }}"
+                        class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                @endcan
 
-                @if (auth()->user()->hasAnyRole(['super_admin', 'admin_hr']))
-                    {{-- ── Master Data ── --}}
+                @can('master.view')
                     <div class="sb-section">Master Data</div>
-
                     <a href="{{ route('admin.schools.index') }}"
                         class="nav-link {{ request()->routeIs('admin.schools.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -77,7 +76,6 @@
                         </svg>
                         <span>Sekolah</span>
                     </a>
-
                     <a href="{{ route('admin.departments.index') }}"
                         class="nav-link {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -87,7 +85,6 @@
                         </svg>
                         <span>Departemen</span>
                     </a>
-
                     <a href="{{ route('admin.positions.index') }}"
                         class="nav-link {{ request()->routeIs('admin.positions.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -97,7 +94,6 @@
                         </svg>
                         <span>Jabatan</span>
                     </a>
-
                     <a href="{{ route('admin.skills.index') }}"
                         class="nav-link {{ request()->routeIs('admin.skills.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -107,7 +103,6 @@
                         </svg>
                         <span>Skill</span>
                     </a>
-
                     <a href="{{ route('admin.leave-types.index') }}"
                         class="nav-link {{ request()->routeIs('admin.leave-types.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -117,10 +112,10 @@
                         </svg>
                         <span>Jenis Cuti</span>
                     </a>
+                @endcan
 
-                    {{-- ── Rekrutmen ── --}}
+                @can('recruitment.view')
                     <div class="sb-section">Rekrutmen</div>
-
                     <a href="{{ route('admin.jobs.index') }}"
                         class="nav-link {{ request()->routeIs('admin.jobs.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -130,7 +125,6 @@
                         </svg>
                         <span>Lowongan Kerja</span>
                     </a>
-
                     <a href="{{ route('admin.applicants.index') }}"
                         class="nav-link {{ request()->routeIs('admin.applicants.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -140,10 +134,10 @@
                         </svg>
                         <span>Data Pelamar</span>
                     </a>
+                @endcan
 
-                    {{-- ── Kepegawaian ── --}}
+                @can('employee.view')
                     <div class="sb-section">Kepegawaian</div>
-
                     <a href="{{ route('admin.employees.index') }}"
                         class="nav-link {{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -153,10 +147,10 @@
                         </svg>
                         <span>Data Pegawai</span>
                     </a>
+                @endcan
 
-                    {{-- ── Absensi ── --}}
+                @can('attendance.view')
                     <div class="sb-section">Absensi</div>
-
                     <a href="{{ route('admin.attendance.index') }}"
                         class="nav-link {{ request()->routeIs('admin.attendance.index') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -166,7 +160,8 @@
                         </svg>
                         <span>Absensi Harian</span>
                     </a>
-
+                @endcan
+                @can('attendance.report')
                     <a href="{{ route('admin.attendance.report') }}"
                         class="nav-link {{ request()->routeIs('admin.attendance.report') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -176,9 +171,10 @@
                         </svg>
                         <span>Laporan Absensi</span>
                     </a>
+                @endcan
 
+                @can('leave.view')
                     <div class="sb-section">Cuti & Izin</div>
-
                     <a href="{{ route('admin.leaves.index') }}"
                         class="nav-link {{ request()->routeIs('admin.leaves.index') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -188,7 +184,8 @@
                         </svg>
                         <span>Pengajuan Cuti</span>
                     </a>
-
+                @endcan
+                @can('leave.balance')
                     <a href="{{ route('admin.leaves.balance') }}"
                         class="nav-link {{ request()->routeIs('admin.leaves.balance') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -198,9 +195,10 @@
                         </svg>
                         <span>Saldo Cuti</span>
                     </a>
+                @endcan
 
+                @can('report.view')
                     <div class="sb-section">Laporan</div>
-
                     <a href="{{ route('admin.reports.index') }}"
                         class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -210,7 +208,7 @@
                         </svg>
                         <span>Laporan SDM</span>
                     </a>
-                @endif
+                @endcan
 
             </nav>
 

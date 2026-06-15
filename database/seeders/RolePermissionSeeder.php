@@ -3,25 +3,163 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        foreach (['super_admin','admin_hr','kepala_sekolah','pegawai','guru','koordinator_kurikulum','siswa'] as $role) {
-            Role::firstOrCreate(['name' => $role]);
+        // Hapus semua permission & role lama
+        Permission::query()->delete();
+        Role::query()->delete();
+
+        // ── Definisi semua permission ─────────────────────────
+        $permissions = [
+            // Dashboard
+            'dashboard.view',
+
+            // Master Data
+            'master.view',
+            'master.create',
+            'master.edit',
+            'master.delete',
+
+            // Rekrutmen
+            'recruitment.view',
+            'recruitment.create',
+            'recruitment.edit',
+            'recruitment.delete',
+            'recruitment.pipeline',
+            'recruitment.convert',
+
+            // Pegawai
+            'employee.view',
+            'employee.view.own',
+            'employee.create',
+            'employee.edit',
+            'employee.delete',
+            'employee.import',
+            'employee.probation',
+
+            // Absensi
+            'attendance.view',
+            'attendance.view.own',
+            'attendance.create',
+            'attendance.edit',
+            'attendance.report',
+            'attendance.export',
+
+            // Cuti
+            'leave.view',
+            'leave.view.own',
+            'leave.view.subordinate',
+            'leave.create',
+            'leave.approve',
+            'leave.balance',
+
+            // Laporan
+            'report.view',
+            'report.export',
+
+            // User Management
+            'user.manage',
+        ];
+
+        foreach ($permissions as $perm) {
+            Permission::create(['name' => $perm, 'guard_name' => 'web']);
         }
 
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@hris.test'],
-            ['name' => 'Super Admin', 'password' => Hash::make('password')]
-        );
-        $admin->assignRole('super_admin');
+        // ── 1. SUPER ADMIN — akses penuh ─────────────────────
+        $superAdmin = Role::create(['name' => 'super_admin', 'guard_name' => 'web']);
+        $superAdmin->syncPermissions(Permission::all());
 
-        $this->command->info('✅ Roles & Super Admin created (admin@hris.test / password)');
+        // ── 2. ADMIN SDM — hampir penuh kecuali user.manage ──
+        $adminSdm = Role::create(['name' => 'admin_sdm', 'guard_name' => 'web']);
+        $adminSdm->syncPermissions([
+            'dashboard.view',
+            'master.view','master.create','master.edit','master.delete',
+            'recruitment.view','recruitment.create','recruitment.edit',
+            'recruitment.delete','recruitment.pipeline','recruitment.convert',
+            'employee.view','employee.create','employee.edit',
+            'employee.delete','employee.import','employee.probation',
+            'attendance.view','attendance.create','attendance.edit',
+            'attendance.report','attendance.export',
+            'leave.view','leave.view.subordinate','leave.create',
+            'leave.approve','leave.balance',
+            'report.view','report.export',
+        ]);
+
+        // ── 3. STAF SDM — tanpa approve cuti & delete pegawai ─
+        $stafSdm = Role::create(['name' => 'staf_sdm', 'guard_name' => 'web']);
+        $stafSdm->syncPermissions([
+            'dashboard.view',
+            'master.view','master.create','master.edit','master.delete',
+            'recruitment.view','recruitment.create','recruitment.edit',
+            'recruitment.delete','recruitment.pipeline','recruitment.convert',
+            'employee.view','employee.create','employee.edit',
+            'employee.import','employee.probation',
+            'attendance.view','attendance.create','attendance.edit',
+            'attendance.report','attendance.export',
+            'leave.view','leave.view.subordinate','leave.create','leave.balance',
+            'report.view','report.export',
+        ]);
+
+        // ── 4. SEKRETARIS — lihat+tambah+edit, tanpa hapus ───
+        $sekretaris = Role::create(['name' => 'sekretaris', 'guard_name' => 'web']);
+        $sekretaris->syncPermissions([
+            'dashboard.view',
+            'master.view','master.create','master.edit',
+            'employee.view','employee.create','employee.edit',
+            'leave.view','leave.create',
+            'report.view','report.export',
+        ]);
+
+        // ── 5. KETUA — read-only + approve cuti tertentu ─────
+        $ketua = Role::create(['name' => 'ketua', 'guard_name' => 'web']);
+        $ketua->syncPermissions([
+            'dashboard.view',
+            'employee.view',
+            'leave.view','leave.view.subordinate','leave.approve',
+            'report.view','report.export',
+        ]);
+
+        // ── 6. BENDAHARA — seperti ketua + ajukan cuti ───────
+        $bendahara = Role::create(['name' => 'bendahara', 'guard_name' => 'web']);
+        $bendahara->syncPermissions([
+            'dashboard.view',
+            'employee.view',
+            'attendance.view.own',
+            'leave.view.own','leave.view.subordinate','leave.create',
+            'report.view','report.export',
+        ]);
+
+        // ── 7. KEPALA BIDANG — diri sendiri + lihat cuti staf ─
+        $kepalaBidang = Role::create(['name' => 'kepala_bidang', 'guard_name' => 'web']);
+        $kepalaBidang->syncPermissions([
+            'dashboard.view',
+            'employee.view.own',
+            'attendance.view.own',
+            'leave.view.own','leave.view.subordinate','leave.create',
+        ]);
+
+        // ── 8. STAF YAYASAN — hanya data diri sendiri ────────
+        $stafYayasan = Role::create(['name' => 'staf_yayasan', 'guard_name' => 'web']);
+        $stafYayasan->syncPermissions([
+            'employee.view.own',
+            'attendance.view.own',
+            'leave.view.own','leave.create',
+        ]);
+
+        $this->command->info('✅ Roles & Permissions selesai!');
+        $this->command->table(
+            ['Role', 'Permission'],
+            Role::all()->map(fn($r) => [
+                $r->name,
+                $r->permissions->count().' permission',
+            ])->toArray()
+        );
     }
 }

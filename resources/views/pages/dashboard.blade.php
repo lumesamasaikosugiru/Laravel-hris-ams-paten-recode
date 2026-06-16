@@ -76,10 +76,20 @@
             ->limit(5)
             ->get();
 
-        // Pegawai mendekati pensiun (dalam 2 tahun)
+        // Sudah melewati usia pensiun (>= 60 tahun)
+        $alreadyRetired = Employee::whereIn('status', ['active', 'probation'])
+            ->whereNotNull('date_of_birth')
+            ->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [60])
+            ->orderByRaw('date_of_birth ASC')
+            ->with(['school', 'activeAssignment.position'])
+            ->limit(5)
+            ->get();
+
+        // Mendekati pensiun (58–59 tahun)
         $retiringSoon = Employee::whereIn('status', ['active', 'probation'])
             ->whereNotNull('date_of_birth')
             ->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [58])
+            ->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) < ?', [60])
             ->orderByRaw('date_of_birth ASC')
             ->with(['school', 'activeAssignment.position'])
             ->limit(5)
@@ -93,7 +103,7 @@
                 <div>
                     <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Pegawai Aktif</p>
                     <p class="text-3xl font-bold text-gray-800 mt-1">{{ $totalActive }}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{ $totalGuru }} guru · {{ $totalStaff }} staf</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ $totalGuru }} guru · {{ $totalStaff }} non guru</p>
                 </div>
                 <div class="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
                     <svg class="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -226,7 +236,7 @@
                     </div>
                     <div class="text-right shrink-0">
                         <p class="text-xs font-semibold text-red-600">
-                            {{ now()->diffInDays($emp->contract_end) }}h
+                            {{ (int) now()->startOfDay()->diffInDays($emp->contract_end) }} hari
                         </p>
                         <p class="text-xs text-gray-400">{{ $emp->contract_end->format('d/m') }}</p>
                     </div>
@@ -244,30 +254,65 @@
                 <h3 class="text-sm font-semibold text-gray-700">Mendekati Pensiun</h3>
                 <span class="badge bg-orange-100 text-orange-700 text-xs">≤ 2 tahun</span>
             </div>
-            @forelse($retiringSoon as $emp)
-                <div class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
-                    <div
-                        class="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xs font-bold shrink-0">
-                        {{ strtoupper(substr($emp->name, 0, 2)) }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-800 truncate">{{ $emp->name }}</p>
-                        <p class="text-xs text-gray-400">{{ $emp->activeAssignment?->position->name ?? '—' }}</p>
-                    </div>
-                    <div class="text-right shrink-0">
-                        <p class="text-xs font-semibold text-orange-600">
-                            {{ $emp->age }} thn
-                        </p>
-                        <p class="text-xs text-gray-400">
-                            {{ $emp->retirement_date?->format('Y') }}
-                        </p>
-                    </div>
+
+            {{-- Sudah melampaui usia pensiun --}}
+            @if ($alreadyRetired->count() > 0)
+                <div class="mb-3">
+                    <p class="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1.5">
+                        ⚠ Sudah Melampaui Usia Pensiun
+                    </p>
+                    @foreach ($alreadyRetired as $emp)
+                        <div class="flex items-center gap-3 py-1.5 border-b border-red-100 last:border-0">
+                            <div
+                                class="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xs font-bold shrink-0">
+                                {{ strtoupper(substr($emp->name, 0, 2)) }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-800 truncate">{{ $emp->name }}</p>
+                                <p class="text-xs text-gray-400">{{ $emp->activeAssignment?->position->name ?? '—' }}</p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <p class="text-xs font-bold text-red-600">{{ $emp->age }} thn</p>
+                                <p class="text-xs text-red-400">Pensiun {{ $emp->retirement_date?->format('Y') }}</p>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
-            @empty
+            @endif
+
+            {{-- Mendekati pensiun --}}
+            @if ($retiringSoon->count() > 0)
+                <div>
+                    @if ($alreadyRetired->count() > 0)
+                        <p class="text-xs font-semibold text-orange-500 uppercase tracking-wide mb-1.5">
+                            Mendekati Pensiun
+                        </p>
+                    @endif
+                    @foreach ($retiringSoon as $emp)
+                        <div class="flex items-center gap-3 py-1.5 border-b border-gray-100 last:border-0">
+                            <div
+                                class="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xs font-bold shrink-0">
+                                {{ strtoupper(substr($emp->name, 0, 2)) }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-800 truncate">{{ $emp->name }}</p>
+                                <p class="text-xs text-gray-400">{{ $emp->activeAssignment?->position->name ?? '—' }}</p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <p class="text-xs font-semibold text-orange-600">{{ $emp->age }} thn</p>
+                                <p class="text-xs text-gray-400">{{ $emp->retirement_date?->format('Y') }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- Kosong --}}
+            @if ($alreadyRetired->count() === 0 && $retiringSoon->count() === 0)
                 <div class="text-center py-6">
                     <p class="text-xs text-gray-400">Tidak ada yang mendekati pensiun</p>
                 </div>
-            @endforelse
+            @endif
         </div>
 
         {{-- Cuti Pending --}}

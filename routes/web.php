@@ -13,7 +13,7 @@ use App\Http\Controllers\Admin\LeaveController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Public\CareerController;
 use App\Http\Controllers\Portal\PortalController;
-
+use App\Http\Controllers\Admin\UserController;
 // ── Public ──────────────────────────────────────────────────
 Route::get('/', fn() => redirect()->route('careers.index'));
 
@@ -117,6 +117,11 @@ Route::middleware('auth')->group(function () {
             Route::get('reports/leaves', [ReportController::class, 'leaves'])
                 ->name('reports.leaves');
         });
+
+        // ── Managemen User ──────────────────────────────────────────
+        Route::get('users', [UserController::class, 'index'])
+            ->middleware('permission:user.manage')
+            ->name('users.index');
     });
 
 });

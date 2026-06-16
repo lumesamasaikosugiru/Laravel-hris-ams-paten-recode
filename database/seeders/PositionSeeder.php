@@ -124,6 +124,17 @@ class PositionSeeder extends Seeder
                 );
             }
 
+            $tendik = Department::where('school_id', $school->id)->where('code', 'TENDIK')->first();
+            foreach ([
+                ['Guru Tidak Tetap', 1],
+                ['Guru Tetap', 1],
+            ] as [$name, $level]) {
+                Position::firstOrCreate(
+                    ['school_id' => $school->id, 'department_id' => $tendik->id, 'name' => $name],
+                    ['level' => $level, 'is_active' => true]
+                );
+            }
+
             $kur = Department::where('school_id', $school->id)->where('code', 'KUR')->first();
             foreach ([
                 ['Wakil Kepala Sekolah Bidang Kurikulum', 4],

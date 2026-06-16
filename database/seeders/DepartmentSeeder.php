@@ -41,6 +41,7 @@ class DepartmentSeeder extends Seeder
             ['code' => 'HUBIN', 'name' => 'Hubungan Industri'],
             ['code' => 'SISWA', 'name' => 'Kesiswaan'],
             ['code' => 'TU', 'name' => 'Tata Usaha'],
+            ['code' => 'TENDIK', 'name' => 'Tenaga Pendidik'],
         ];
 
         foreach ([$smk1, $smk2, $smk3, $smp] as $school) {

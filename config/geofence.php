@@ -36,34 +36,44 @@ return [
     */
     'locations' => [
         [
-            'name' => 'Kantor 1 / SMK YP. Fatahillah 1 Kramatwatu',
-            'latitude' => -6.033658338144455,
-            'longitude' => 106.08295536520035,
+            'name' => 'Kantor 1 YPF Serdang',
+            'latitude' => -6.038220,
+            'longitude' => 106.083024,
         ],
         [
-            'name' => 'Kantor 2 / SMK YP. Fatahillah 1 Cilegon Kampus 1',
-            'latitude' => -6.0104385767052575,
-            'longitude' => 106.0327867160515,
+            'name' => 'SMK YP. Fatahillah 1 Kramatwatu',
+            'latitude' => -6.037921,
+            'longitude' => 106.082952,
+        ],
+        [
+            'name' => 'Kantor 2 YPF Cilegon',
+            'latitude' => -6.010507,
+            'longitude' => 106.032824,
+        ],
+        [
+            'name' => 'SMK YP. Fatahillah 1 Cilegon Kampus 1',
+            'latitude' => -6.010683,
+            'longitude' => 106.032977,
         ],
         [
             'name' => 'SMK YP. Fatahillah 1 Cilegon Kampus 3',
-            'latitude' => -6.01133887778221,
-            'longitude' => 106.03318497612834,
+            'latitude' => -6.011431,
+            'longitude' => 106.033159,
         ],
         [
             'name' => 'SMK YP. Fatahillah 1 Cilegon Kampus 4',
-            'latitude' => -6.0274956974956035,
-            'longitude' => 106.03410088308621,
+            'latitude' => -6.027610,
+            'longitude' => 106.034145,
         ],
         [
             'name' => 'SMK YP. Fatahillah 2 Cilegon',
-            'latitude' => -6.010785227248223,
-            'longitude' => 106.03288513488798,
+            'latitude' => -6.010683,
+            'longitude' => 106.032977,
         ],
         [
             'name' => 'SMP YP. Fatahillah Cilegon',
-            'latitude' => -6.010534415407497,
-            'longitude' => 106.03289743724417,
+            'latitude' => -6.010849,
+            'longitude' => 106.032935,
         ],
     ],
 

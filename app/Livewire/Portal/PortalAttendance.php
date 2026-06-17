@@ -10,17 +10,34 @@ use Livewire\Component;
 
 class PortalAttendance extends Component
 {
-    // ── State UI (sudah ada sebelumnya) ──────────────────────────────────────
+    // ── State UI ──────────────────────────────────────────────────────────────
     public ?int $selectedSchoolId = null;
     public bool $showCheckInConfirm = false;
     public bool $showCheckOutConfirm = false;
 
-    // ── GPS — ditambahkan ─────────────────────────────────────────────────────
+    // ── GPS ───────────────────────────────────────────────────────────────────
     public ?float $latitude = null;
     public ?float $longitude = null;
     public string $gpsError = '';
     public bool $gpsReady = false;
     public bool $gpsLoading = false;
+
+    // ── Off-site flow ─────────────────────────────────────────────────────────
+    // Muncul saat GPS valid tapi di luar radius
+    public bool $showOffsiteModal = false;
+    public string $offsiteReason = '';   // pilihan dari dropdown
+    public string $offsiteNote = '';   // keterangan bebas
+    public string $offsiteAction = '';   // 'checkin' | 'checkout'
+
+    // Daftar alasan yang tersedia
+    public array $offsiteReasons = [
+        'Lomba / Kompetisi',
+        'Rapat Dinas / Eksternal',
+        'Kunjungan Industri',
+        'Pelatihan / Workshop',
+        'Kegiatan Yayasan',
+        'Lainnya',
+    ];
 
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -32,7 +49,7 @@ class PortalAttendance extends Component
         }
     }
 
-    // ── GPS — dipanggil dari Alpine.js ────────────────────────────────────────
+    // ── GPS callbacks (dipanggil dari Alpine.js) ──────────────────────────────
 
     public function setCoordinates(float $lat, float $lng): void
     {
@@ -56,6 +73,38 @@ class PortalAttendance extends Component
         $this->gpsError = '';
     }
 
+    // ── Off-site modal ────────────────────────────────────────────────────────
+
+    /** Tutup modal dan reset state off-site */
+    public function cancelOffsite(): void
+    {
+        $this->showOffsiteModal = false;
+        $this->offsiteReason = '';
+        $this->offsiteNote = '';
+        $this->offsiteAction = '';
+    }
+
+    /** Dipanggil dari modal — simpan check-in/out off-site */
+    public function confirmOffsite(): void
+    {
+        $this->validate([
+            'offsiteReason' => 'required',
+            'offsiteNote' => $this->offsiteReason === 'Lainnya' ? 'required|min:5' : 'nullable',
+        ], [
+            'offsiteReason.required' => 'Pilih alasan kegiatan luar.',
+            'offsiteNote.required' => 'Isi keterangan untuk alasan "Lainnya".',
+            'offsiteNote.min' => 'Keterangan minimal 5 karakter.',
+        ]);
+
+        if ($this->offsiteAction === 'checkin') {
+            $this->doCheckIn(offsite: true);
+        } else {
+            $this->doCheckOut(offsite: true);
+        }
+
+        $this->cancelOffsite();
+    }
+
     // ── Check-In ─────────────────────────────────────────────────────────────
 
     public function checkIn(): void
@@ -64,7 +113,6 @@ class PortalAttendance extends Component
         if (!$employee)
             return;
 
-        // Validasi GPS
         if (!$this->gpsReady || is_null($this->latitude)) {
             session()->flash('error', 'Izinkan akses lokasi terlebih dahulu.');
             $this->showCheckInConfirm = false;
@@ -72,7 +120,6 @@ class PortalAttendance extends Component
         }
 
         $today = now()->format('Y-m-d');
-
         $existing = Attendance::where('employee_id', $employee->id)
             ->where('date', $today)
             ->where('school_id', $this->selectedSchoolId)
@@ -84,54 +131,19 @@ class PortalAttendance extends Component
             return;
         }
 
-        // Validasi geofence
         $geo = app(GeofenceService::class)->check($this->latitude, $this->longitude);
-        $strict = config('geofence.strict', true);
 
-        if ($strict && !$geo['valid']) {
-            session()->flash(
-                'error',
-                "Check-in gagal. Anda berada ±{$geo['distance']} m dari lokasi terdekat ({$geo['nearest']}). "
-                . "Maksimum " . config('geofence.radius') . " m."
-            );
+        if (!$geo['valid']) {
+            // Di luar radius → tampilkan modal off-site
             $this->showCheckInConfirm = false;
+            $this->offsiteAction = 'checkin';
+            $this->showOffsiteModal = true;
             return;
         }
 
-        // Hitung status & keterlambatan
-        $checkInTime = now();
-        $workStart = now()->setTimeFromTimeString(Attendance::WORK_START);
-        $status = $checkInTime->gt($workStart) ? 'late' : 'present';
-        $lateMinutes = $status === 'late' ? (int) $workStart->diffInMinutes($checkInTime) : 0;
-
-        Attendance::updateOrCreate(
-            [
-                'employee_id' => $employee->id,
-                'date' => $today,
-                'school_id' => $this->selectedSchoolId,
-            ],
-            [
-                'check_in' => $checkInTime->format('H:i:s'),
-                'status' => $status,
-                'late_minutes' => $lateMinutes,
-                'recorded_by' => auth()->id(),
-                // Kolom GPS baru
-                'checkin_latitude' => $this->latitude,
-                'checkin_longitude' => $this->longitude,
-                'checkin_location_valid' => $geo['valid'],
-                'checkin_location_name' => $geo['location_name'],
-            ]
-        );
-
-        $locMsg = $geo['valid']
-            ? " 📍 {$geo['location_name']}"
-            : " ⚠️ Lokasi di luar area (dicatat untuk audit).";
-
-        session()->flash('success', "Check-in berhasil pukul {$checkInTime->format('H:i')}.{$locMsg}");
         $this->showCheckInConfirm = false;
+        $this->doCheckIn(offsite: false, geo: $geo);
     }
-
-    // ── Check-Out ─────────────────────────────────────────────────────────────
 
     public function checkOut(): void
     {
@@ -139,7 +151,6 @@ class PortalAttendance extends Component
         if (!$employee)
             return;
 
-        // Validasi GPS
         if (!$this->gpsReady || is_null($this->latitude)) {
             session()->flash('error', 'Izinkan akses lokasi terlebih dahulu.');
             $this->showCheckOutConfirm = false;
@@ -147,7 +158,6 @@ class PortalAttendance extends Component
         }
 
         $today = now()->format('Y-m-d');
-
         $attendance = Attendance::where('employee_id', $employee->id)
             ->where('date', $today)
             ->where('school_id', $this->selectedSchoolId)
@@ -165,19 +175,78 @@ class PortalAttendance extends Component
             return;
         }
 
-        // Validasi geofence
         $geo = app(GeofenceService::class)->check($this->latitude, $this->longitude);
-        $strict = config('geofence.strict', true);
 
-        if ($strict && !$geo['valid']) {
-            session()->flash(
-                'error',
-                "Check-out gagal. Anda berada ±{$geo['distance']} m dari lokasi terdekat ({$geo['nearest']}). "
-                . "Maksimum " . config('geofence.radius') . " m."
-            );
+        if (!$geo['valid']) {
             $this->showCheckOutConfirm = false;
+            $this->offsiteAction = 'checkout';
+            $this->showOffsiteModal = true;
             return;
         }
+
+        $this->showCheckOutConfirm = false;
+        $this->doCheckOut(offsite: false, geo: $geo);
+    }
+
+    // ── Internal: simpan check-in ─────────────────────────────────────────────
+
+    private function doCheckIn(bool $offsite, array $geo = []): void
+    {
+        $employee = $this->getEmployee();
+        $today = now()->format('Y-m-d');
+        $checkInTime = now();
+        $workStart = now()->setTimeFromTimeString(Attendance::WORK_START);
+        $status = $checkInTime->gt($workStart) ? 'late' : 'present';
+        $lateMinutes = $status === 'late' ? (int) $workStart->diffInMinutes($checkInTime) : 0;
+
+        Attendance::updateOrCreate(
+            [
+                'employee_id' => $employee->id,
+                'date' => $today,
+                'school_id' => $this->selectedSchoolId,
+            ],
+            [
+                'check_in' => $checkInTime->format('H:i:s'),
+                'status' => $status,
+                'late_minutes' => $lateMinutes,
+                'recorded_by' => auth()->id(),
+
+                // GPS
+                'checkin_latitude' => $this->latitude,
+                'checkin_longitude' => $this->longitude,
+                'checkin_location_valid' => !$offsite,
+                'checkin_location_name' => $offsite ? 'Kegiatan Luar' : ($geo['location_name'] ?? '-'),
+
+                // Off-site
+                'is_offsite' => $offsite,
+                'offsite_reason' => $offsite ? $this->offsiteReason : null,
+                'offsite_note' => $offsite ? ($this->offsiteNote ?: null) : null,
+                'offsite_status' => $offsite ? 'pending' : null,
+            ]
+        );
+
+        if ($offsite) {
+            session()->flash(
+                'success',
+                "Check-in berhasil pukul {$checkInTime->format('H:i')}. "
+                . "⏳ Kegiatan luar menunggu persetujuan HR."
+            );
+        } else {
+            session()->flash(
+                'success',
+                "Check-in berhasil pukul {$checkInTime->format('H:i')}. 📍 {$geo['location_name']}"
+            );
+        }
+    }
+
+    private function doCheckOut(bool $offsite, array $geo = []): void
+    {
+        $employee = $this->getEmployee();
+        $today = now()->format('Y-m-d');
+        $attendance = Attendance::where('employee_id', $employee->id)
+            ->where('date', $today)
+            ->where('school_id', $this->selectedSchoolId)
+            ->first();
 
         $checkOutTime = now();
         $workMinutes = (int) Carbon::parse($attendance->check_in)->diffInMinutes($checkOutTime);
@@ -185,19 +254,32 @@ class PortalAttendance extends Component
         $attendance->update([
             'check_out' => $checkOutTime->format('H:i:s'),
             'work_minutes' => $workMinutes,
-            // Kolom GPS baru
+
+            // GPS
             'checkout_latitude' => $this->latitude,
             'checkout_longitude' => $this->longitude,
-            'checkout_location_valid' => $geo['valid'],
-            'checkout_location_name' => $geo['location_name'],
+            'checkout_location_valid' => !$offsite,
+            'checkout_location_name' => $offsite ? 'Kegiatan Luar' : ($geo['location_name'] ?? '-'),
+
+            // Off-site (hanya update jika check-out yang off-site, bukan check-in)
+            'is_offsite' => $attendance->is_offsite || $offsite,
+            'offsite_reason' => $attendance->offsite_reason ?? ($offsite ? $this->offsiteReason : null),
+            'offsite_note' => $attendance->offsite_note ?? ($offsite ? ($this->offsiteNote ?: null) : null),
+            'offsite_status' => ($attendance->is_offsite || $offsite) ? ($attendance->offsite_status ?? 'pending') : null,
         ]);
 
-        $locMsg = $geo['valid']
-            ? " 📍 {$geo['location_name']}"
-            : " ⚠️ Lokasi di luar area (dicatat untuk audit).";
-
-        session()->flash('success', "Check-out berhasil pukul {$checkOutTime->format('H:i')}.{$locMsg}");
-        $this->showCheckOutConfirm = false;
+        if ($offsite) {
+            session()->flash(
+                'success',
+                "Check-out berhasil pukul {$checkOutTime->format('H:i')}. "
+                . "⏳ Kegiatan luar menunggu persetujuan HR."
+            );
+        } else {
+            session()->flash(
+                'success',
+                "Check-out berhasil pukul {$checkOutTime->format('H:i')}. 📍 {$geo['location_name']}"
+            );
+        }
     }
 
     // ── Render ────────────────────────────────────────────────────────────────
@@ -237,11 +319,10 @@ class PortalAttendance extends Component
             }
         }
 
-        $isWeekend = now()->isWeekend();
-
         return view(
             'livewire.portal.portal-attendance',
-            compact('employee', 'todayAttendance', 'history', 'schools', 'isWeekend')
+            compact('employee', 'todayAttendance', 'history', 'schools')
+            + ['isWeekend' => now()->isWeekend()]
         );
     }
 

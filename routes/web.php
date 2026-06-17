@@ -122,6 +122,12 @@ Route::middleware('auth')->group(function () {
         Route::get('users', [UserController::class, 'index'])
             ->middleware('permission:user.manage')
             ->name('users.index');
+
+        // Approval kegiatan luar
+        Route::get('offsite-approvals', function () {
+            return view('admin.offsite-approvals');
+        })->middleware('permission:attendance.view')
+            ->name('offsite-approvals');
     });
 
 });

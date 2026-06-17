@@ -17,7 +17,7 @@
 
     <nav class="bg-sidebar shadow-md sticky top-0 z-40">
         <div class="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between">
-            <a href="{{ route('careers.index') }}" class="flex items-center gap-2.5">
+            <a href="{{ route('welcome') }}" class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-lg overflow-hidden shrink-0">
                     <img src="{{ asset('images/logo-fatahillah.jpg') }}" alt="Logo Yayasan Fatahillah"
                         class="w-full h-full object-cover">

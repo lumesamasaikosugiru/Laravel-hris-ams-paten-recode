@@ -27,13 +27,20 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        // Bersihkan intended URL lama dari sesi sebelumnya (mis. percobaan
+        // akses halaman terproteksi oleh user/role yang berbeda) supaya
+        // tidak "membajak" redirect berdasarkan role yang baru login.
+        $request->session()->forget('url.intended');
+
         $user = auth()->user();
         $portalRoles = ['kepala_bidang', 'staf_yayasan'];
+
         $target = $user->hasAnyRole($portalRoles)
             ? route('portal.home')
             : route('dashboard');
-        return redirect()->intended($target);
 
+        return redirect()->to($target);
     }
 
     /**

@@ -1,7 +1,7 @@
 <x-guest-layout>
 
     {{-- Heading --}}
-    <div class="mb-8">
+    <div class="mb-8 text-center lg:text-left">
         <h1 class="text-2xl font-bold text-gray-900">Selamat datang kembali</h1>
         <p class="text-sm text-gray-500 mt-1.5">Masuk untuk mengakses HRIS Yayasan Fatahillah.</p>
     </div>

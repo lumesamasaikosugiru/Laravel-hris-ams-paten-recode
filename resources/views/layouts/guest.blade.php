@@ -127,11 +127,13 @@
         <div class="auth-form-panel flex flex-col">
 
             {{-- Header mobile — brand ringkas, hanya tampil di bawah lg --}}
-            <div class="auth-brand-panel-mobile lg:hidden px-6 pt-8 pb-10 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0 ring-2 ring-white/15">
+            <div
+                class="auth-brand-panel-mobile lg:hidden px-6 pt-10 pb-10 flex flex-col items-center text-center gap-3">
+                <a href="{{ route('welcome') }}"
+                    class="w-12 h-12 rounded-xl overflow-hidden shrink-0 ring-2 ring-white/15">
                     <img src="{{ asset('images/logo-fatahillah.jpg') }}" alt="Logo Yayasan Fatahillah"
                         class="w-full h-full object-cover">
-                </div>
+                </a>
                 <div class="leading-tight">
                     <div class="text-white font-bold text-sm">HRIS Fatahillah</div>
                     <div class="text-sb-muted text-xs">Yayasan Pendidikan</div>

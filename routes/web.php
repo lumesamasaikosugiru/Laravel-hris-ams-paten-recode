@@ -14,8 +14,11 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Public\CareerController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\Admin\UserController;
+
 // ── Public ──────────────────────────────────────────────────
-Route::get('/', fn() => redirect()->route('careers.index'));
+
+// Landing page company profile Yayasan Fatahillah
+Route::get('/', fn() => view('welcome'))->name('welcome');
 
 Route::prefix('karir')->name('careers.')->group(function () {
     Route::get('/', [CareerController::class, 'index'])->name('index');
@@ -68,39 +71,30 @@ Route::middleware('auth')->group(function () {
         });
 
         // ── Absensi ──────────────────────────────────────────
-        Route::get(
-            'attendance',
-            [AttendanceController::class, 'index']
-        )
+        Route::get('attendance', [AttendanceController::class, 'index'])
             ->middleware('permission:attendance.view')
             ->name('attendance.index');
 
-        Route::get(
-            'attendance/report',
-            [AttendanceController::class, 'report']
-        )
+        Route::get('attendance/report', [AttendanceController::class, 'report'])
             ->middleware('permission:attendance.report')
             ->name('attendance.report');
 
-        Route::get(
-            'attendance/export',
-            [AttendanceController::class, 'export']
-        )
+        Route::get('attendance/export', [AttendanceController::class, 'export'])
             ->middleware('permission:attendance.export')
             ->name('attendance.export');
 
+        // Approval kegiatan luar (bagian dari modul Absensi)
+        Route::get('offsite-approvals', function () {
+            return view('admin.offsite-approvals');
+        })->middleware('permission:attendance.view')
+            ->name('offsite-approvals');
+
         // ── Cuti & Izin ──────────────────────────────────────
-        Route::get(
-            'leaves',
-            [LeaveController::class, 'index']
-        )
+        Route::get('leaves', [LeaveController::class, 'index'])
             ->middleware('permission:leave.view')
             ->name('leaves.index');
 
-        Route::get(
-            'leaves/balance',
-            [LeaveController::class, 'balance']
-        )
+        Route::get('leaves/balance', [LeaveController::class, 'balance'])
             ->middleware('permission:leave.balance')
             ->name('leaves.balance');
 
@@ -118,16 +112,11 @@ Route::middleware('auth')->group(function () {
                 ->name('reports.leaves');
         });
 
-        // ── Managemen User ──────────────────────────────────────────
+        // ── Managemen User ─────────────────────────────────────
         Route::get('users', [UserController::class, 'index'])
             ->middleware('permission:user.manage')
             ->name('users.index');
 
-        // Approval kegiatan luar
-        Route::get('offsite-approvals', function () {
-            return view('admin.offsite-approvals');
-        })->middleware('permission:attendance.view')
-            ->name('offsite-approvals');
     });
 
 });

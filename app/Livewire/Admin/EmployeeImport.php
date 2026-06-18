@@ -36,6 +36,18 @@ class EmployeeImport extends Component
         'file.max' => 'Ukuran file maksimal 5MB.',
     ];
 
+    // ── Mount ─────────────────────────────────────────────────
+    public function mount(): void
+    {
+        // Pengaman backend: import Excel setara dengan menambah banyak
+        // pegawai sekaligus, jadi syaratnya sama dengan employee.create.
+        // Dicek di sini (bukan hanya disembunyikan di tombol pada view)
+        // supaya request berhenti total sebelum komponen ini sempat
+        // render apapun, sekalipun diakses langsung lewat URL
+        // /admin/employees/import oleh role yang tidak berhak.
+        abort_unless(auth()->user()->can('employee.create'), 403, 'Anda tidak memiliki izin untuk mengimport data pegawai.');
+    }
+
     public function updatedFile(): void
     {
         $this->fileError = '';
@@ -174,6 +186,11 @@ class EmployeeImport extends Component
 
     public function import(): void
     {
+        // Pengaman kedua (defense in depth): cek ulang di sini untuk
+        // menutup kemungkinan request langsung ke method ini lewat
+        // manipulasi Livewire payload tanpa melalui mount() yang normal.
+        abort_unless(auth()->user()->can('employee.create'), 403, 'Anda tidak memiliki izin untuk mengimport data pegawai.');
+
         $this->importing = true;
         $this->successCount = 0;
         $this->errorCount = 0;

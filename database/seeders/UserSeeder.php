@@ -12,86 +12,97 @@ class UserSeeder extends Seeder
         $users = [
             // Super Admin
             [
-                'name'  => 'Super Admin',
+                'name' => 'Super Admin',
                 'email' => 'hris@superadmin.dev',
-                'role'  => 'super_admin',
+                'role' => 'super_admin',
             ],
-            // Admin SDM
+            // Admin atau kepala bidang SDM
             [
-                'name'  => 'Admin SDM',
+                'name' => 'Admin | Kepala Bidang SDM',// bisa pak deni yang akses
                 'email' => 'hris@adminsdm.dev',
-                'role'  => 'admin_sdm',
+                'role' => 'admin_sdm',
             ],
-            // Staf SDM (2 orang)
+            // Staf SDM (punya akses dashboard)
             [
-                'name'  => 'Staf SDM 1',
+                'name' => 'Staf SDM - Gatot',
                 'email' => 'hris@stafsdm1.dev',
-                'role'  => 'staf_sdm',
-            ],
-            [
-                'name'  => 'Staf SDM 2',
-                'email' => 'hris@stafsdm2.dev',
-                'role'  => 'staf_sdm',
+                'role' => 'staf_sdm',
             ],
             // Ketua
             [
-                'name'  => 'Ketua Yayasan',
+                'name' => 'Ketua Yayasan',
                 'email' => 'hris@ketua.dev',
-                'role'  => 'ketua',
+                'role' => 'ketua',
             ],
             // Sekretaris
             [
-                'name'  => 'Sekretaris',
+                'name' => 'Sekretaris',
                 'email' => 'hris@sekretaris.dev',
-                'role'  => 'sekretaris',
+                'role' => 'sekretaris',
             ],
             // Bendahara
             [
-                'name'  => 'Bendahara',
+                'name' => 'Bendahara',
                 'email' => 'hris@bendahara.dev',
-                'role'  => 'bendahara',
+                'role' => 'bendahara',
             ],
             // Kepala Bidang (4 orang)
             [
-                'name'  => 'Kepala Bidang P2MP',
+                'name' => 'Kepala Bidang P2MP',
                 'email' => 'hris@kabid.p2mp.dev',
-                'role'  => 'kepala_bidang',
+                'role' => 'kepala_bidang',
             ],
             [
-                'name'  => 'Kepala Bidang Keuangan',
+                'name' => 'Kepala Bidang Keuangan',
                 'email' => 'hris@kabid.keuangan.dev',
-                'role'  => 'kepala_bidang',
+                'role' => 'kepala_bidang',
             ],
             [
-                'name'  => 'Kepala Bidang Sarpras',
+                'name' => 'Kepala Bidang Sarpras',
                 'email' => 'hris@kabid.sarpras.dev',
-                'role'  => 'kepala_bidang',
+                'role' => 'kepala_bidang',
             ],
             [
-                'name'  => 'Kepala Bidang Humas',
+                'name' => 'Kepala Bidang Humas',
                 'email' => 'hris@kabid.humas.dev',
-                'role'  => 'kepala_bidang',
+                'role' => 'kepala_bidang',
             ],
             // Staf Yayasan
             [
-                'name'  => 'Staf Bendahara',
-                'email' => 'hris@staf.bendahara.dev',
-                'role'  => 'staf_yayasan',
+                'name' => 'Staf Sarpras - Subhi',
+                'email' => 'hris@staf.sarpras.dev',
+                'role' => 'staf_yayasan',
             ],
             [
-                'name'  => 'Staf Bidang SDM',
+                'name' => 'Staf Bendahara - Via',
+                'email' => 'hris@staf.bendahara.dev',
+                'role' => 'staf_yayasan',
+            ],
+            [
+                'name' => 'Staf P2MP - Dwiki',
+                'email' => 'hris@staf.p2mp.dev',
+                'role' => 'staf_yayasan',
+            ],
+            [
+                'name' => 'Staf SDM - Deni',
                 'email' => 'hris@staf.sdm.dev',
-                'role'  => 'staf_yayasan',
+                'role' => 'staf_yayasan',
+            ],
+            [
+                'name' => 'Staf SDM - Muah',
+                'email' => 'hris@staf.sdm.dev',
+                'role' => 'staf_yayasan',
             ],
         ];
 
         foreach ($users as $data) {
-            if (User::where('email', $data['email'])->exists()) continue;
+            if (User::where('email', $data['email'])->exists())
+                continue;
 
             $user = User::create([
-                'name'              => $data['name'],
-                'email'             => $data['email'],
-                'password'          => Hash::make('password'),
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]);
 
@@ -102,7 +113,9 @@ class UserSeeder extends Seeder
         $this->command->table(
             ['Nama', 'Email', 'Role'],
             collect($users)->map(fn($u) => [
-                $u['name'], $u['email'], $u['role'],
+                $u['name'],
+                $u['email'],
+                $u['role'],
             ])->toArray()
         );
     }

@@ -28,6 +28,11 @@ class EmployeeDetail extends Component
 
     public function confirmDelete(): void
     {
+        // Pengaman backend: tombol Hapus sudah disembunyikan di tampilan
+        // untuk role tanpa employee.delete, tapi tetap dicek ulang di
+        // sini supaya tidak bisa dipicu lewat manipulasi state Livewire.
+        abort_unless(auth()->user()->can('employee.delete'), 403, 'Anda tidak memiliki izin untuk menghapus data pegawai.');
+
         $this->showDeleteModal = true;
     }
 
@@ -60,8 +65,26 @@ class EmployeeDetail extends Component
         $this->nipyPreview = $this->generateNipyPreview();
     }
 
-    public function delete(): void
+    /**
+     * Method ini SENGAJA diberi nama deleteEmployee(), bukan delete().
+     *
+     * Alasan: "delete" adalah nama yang berpotensi konflik di Livewire —
+     * baik dengan method internal framework, atau dengan binding magic
+     * lain yang dikenali Livewire secara khusus pada nama-nama umum
+     * tertentu (create/update/delete/save dianggap "reserved-like" di
+     * banyak versi Livewire meski tidak selalu didokumentasikan jelas).
+     * Simtom yang terjadi sebelumnya — tombol macet permanen di status
+     * "loading" tanpa request baru tercatat di Network tab dan tanpa
+     * log error apa pun — konsisten dengan request yang gagal di-dispatch
+     * Livewire SEBELUM sampai ke server, bukan gagal di server.
+     */
+    public function deleteEmployee(): void
     {
+        // Pengaman kedua (defense in depth): cek ulang di sini untuk
+        // menutup kemungkinan request langsung ke method ini tanpa
+        // melalui confirmDelete() yang normal.
+        abort_unless(auth()->user()->can('employee.delete'), 403, 'Anda tidak memiliki izin untuk menghapus data pegawai.');
+
         $emp = $this->employee;
 
         if ($emp->attendances()->exists() || $emp->leaveRequests()->exists()) {
@@ -75,10 +98,30 @@ class EmployeeDetail extends Component
         }
 
         $name = $emp->name;
-        $emp->delete();
 
-        session()->flash('success', "{$name} berhasil dihapus.");
-        $this->redirect(route('admin.employees.index'));
+        try {
+            DB::transaction(function () use ($emp) {
+                // Lepas link ke akun User (jika ada) SEBELUM menghapus,
+                // supaya tidak ditolak oleh foreign key constraint
+                // employees.user_id -> users.id.
+                if ($emp->user_id) {
+                    $emp->update(['user_id' => null]);
+                }
+
+                $emp->delete();
+            });
+
+            session()->flash('success', "{$name} berhasil dihapus.");
+            $this->redirect(route('admin.employees.index'));
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('Gagal menghapus pegawai: ' . $e->getMessage());
+            session()->flash(
+                'error',
+                "Gagal menghapus {$name}. Data ini masih memiliki keterkaitan dengan data lain di sistem."
+            );
+            $this->showDeleteModal = false;
+        }
     }
 
     private function generateNipyPreview(): string

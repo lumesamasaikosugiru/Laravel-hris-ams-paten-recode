@@ -26,8 +26,9 @@ Route::prefix('karir')->name('careers.')->group(function () {
     Route::get('/{jobVacancy}/daftar', [CareerController::class, 'apply'])->name('apply');
 });
 
-// Portal — khusus kepala_bidang & staf_yayasan
-Route::middleware(['auth', 'role:kepala_bidang|staf_yayasan'])
+// Portal — kepala_bidang, staf_yayasan, dan role dashboard yang
+// JUGA perlu absen/cuti harian (sekretaris, bendahara, ketua, staf_sdm)
+Route::middleware(['auth', 'role:kepala_bidang|staf_yayasan|sekretaris|bendahara|ketua|staf_sdm'])
     ->prefix('portal')->name('portal.')->group(function () {
         Route::get('/', [PortalController::class, 'home'])->name('home');
         Route::get('/attendance', [PortalController::class, 'attendance'])->name('attendance');
@@ -61,13 +62,29 @@ Route::middleware('auth')->group(function () {
         });
 
         // ── Kepegawaian ──────────────────────────────────────
+        // index & show hanya butuh employee.view (lihat saja).
+        // create & edit butuh permission terpisah yang lebih ketat,
+        // supaya role read-only (bendahara, ketua) tidak bisa akses
+        // halaman create/edit lewat URL manual sekalipun tombolnya
+        // sudah disembunyikan di tampilan.
         Route::middleware('permission:employee.view')->group(function () {
             Route::get('employees/import', [EmployeeController::class, 'import'])
+                ->middleware('permission:employee.create')
                 ->name('employees.import');
             Route::get('employees/template', [EmployeeController::class, 'downloadTemplate'])
+                ->middleware('permission:employee.create')
                 ->name('employees.template');
-            Route::resource('employees', EmployeeController::class)
-                ->only(['index', 'create', 'edit', 'show']);
+
+            Route::get('employees', [EmployeeController::class, 'index'])
+                ->name('employees.index');
+            Route::get('employees/create', [EmployeeController::class, 'create'])
+                ->middleware('permission:employee.create')
+                ->name('employees.create');
+            Route::get('employees/{employee}', [EmployeeController::class, 'show'])
+                ->name('employees.show');
+            Route::get('employees/{employee}/edit', [EmployeeController::class, 'edit'])
+                ->middleware('permission:employee.edit')
+                ->name('employees.edit');
         });
 
         // ── Absensi ──────────────────────────────────────────

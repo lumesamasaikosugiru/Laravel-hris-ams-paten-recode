@@ -61,57 +61,17 @@
                             Edit
                         </a>
 
-                        <button wire:click="confirmDelete"
-                            class="btn-ghost text-xs py-1.5 px-3 border border-red-200 text-red-500 hover:bg-red-50 flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                            </svg>
-                            Hapus
-                        </button>
-
-                        {{-- Modal Hapus --}}
-                        @if ($showDeleteModal)
-                            <div class="modal-backdrop" wire:click="$set('showDeleteModal',false)">
-                                <div class="modal-box max-w-sm" wire:click.stop>
-                                    <div class="modal-header"
-                                        style="background:linear-gradient(to right,#dc2626,#b91c1c)">
-                                        <h3>Hapus Pegawai?</h3>
-                                        <button wire:click="$set('showDeleteModal',false)"
-                                            class="text-white/70 hover:text-white">
-                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M6 18 18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div class="modal-body text-center">
-                                        <svg class="w-10 h-10 text-red-400 mx-auto mb-3" fill="none"
-                                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                                        </svg>
-                                        <p class="text-sm font-semibold text-gray-800 mb-1">
-                                            Hapus {{ $employee->name }}?
-                                        </p>
-                                        <p class="text-xs text-gray-500">
-                                            Data pegawai akan disembunyikan dari sistem. Riwayat tetap tersimpan dan
-                                            dapat dipulihkan oleh admin.
-                                        </p>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button wire:click="$set('showDeleteModal',false)"
-                                            class="btn-ghost">Batal</button>
-                                        <button wire:click="delete" wire:loading.attr="disabled" class="btn-danger">
-                                            <span wire:loading.remove wire:target="delete">Ya, Hapus</span>
-                                            <span wire:loading wire:target="delete">Menghapus...</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
+                        @can('employee.delete')
+                            <button wire:click="confirmDelete"
+                                class="btn-ghost text-xs py-1.5 px-3 border border-red-200 text-red-500 hover:bg-red-50 flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                </svg>
+                                Hapus
+                            </button>
+                        @endcan
                     </div>
                 </div>
 
@@ -607,5 +567,48 @@
             </div>
         </div>
     @endif
+
+    {{-- ══ MODAL: Hapus Pegawai ══ ── dipindah ke level root, bukan
+         lagi bersarang di dalam div tombol-tombol header, supaya
+         tidak terpengaruh stacking context / overflow dari parent --}}
+    @can('employee.delete')
+        @if ($showDeleteModal)
+            <div class="modal-backdrop" wire:click="$set('showDeleteModal',false)">
+                <div class="modal-box max-w-sm" wire:click.stop>
+                    <div class="modal-header" style="background:linear-gradient(to right,#dc2626,#b91c1c)">
+                        <h3>Hapus Pegawai?</h3>
+                        <button wire:click="$set('showDeleteModal',false)" class="text-white/70 hover:text-white">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <svg class="w-10 h-10 text-red-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                        <p class="text-sm font-semibold text-gray-800 mb-1">
+                            Hapus {{ $employee->name }}?
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            Data pegawai akan disembunyikan dari sistem. Riwayat tetap tersimpan dan
+                            dapat dipulihkan oleh admin.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button wire:click="$set('showDeleteModal',false)" class="btn-ghost">Batal</button>
+                        <button wire:click="deleteEmployee" wire:loading.attr="disabled" wire:target="deleteEmployee"
+                            class="btn-danger">
+                            <span wire:loading.remove wire:target="deleteEmployee">Ya, Hapus</span>
+                            <span wire:loading wire:target="deleteEmployee">Menghapus...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endcan
 
 </div>

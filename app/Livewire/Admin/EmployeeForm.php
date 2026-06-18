@@ -108,6 +108,19 @@ class EmployeeForm extends Component
     // ── Mount ─────────────────────────────────────────────────
     public function mount(?int $employeeId = null): void
     {
+        // Pengaman backend: pastikan permission BENAR-BENAR dicek di sini,
+        // bukan hanya disembunyikan di tampilan. mount() jalan sebelum apa
+        // pun di-render, jadi request berhenti total kalau role tidak
+        // punya hak yang sesuai (mis. bendahara/ketua yang hanya punya
+        // employee.view, tanpa employee.create/employee.edit) — sekalipun
+        // mereka mengakses URL /admin/employees/create atau /edit secara
+        // langsung tanpa lewat tombol yang sudah disembunyikan di view.
+        if ($employeeId) {
+            abort_unless(auth()->user()->can('employee.edit'), 403, 'Anda tidak memiliki izin untuk mengedit data pegawai.');
+        } else {
+            abort_unless(auth()->user()->can('employee.create'), 403, 'Anda tidak memiliki izin untuk menambah data pegawai.');
+        }
+
         if ($employeeId) {
             $this->isEdit = true;
             $this->employee = Employee::findOrFail($employeeId);
@@ -186,6 +199,16 @@ class EmployeeForm extends Component
     // ── Save ─────────────────────────────────────────────────
     public function save(): void
     {
+        // Pengaman kedua (defense in depth): meski mount() sudah memblokir
+        // akses ke halaman ini, cek ulang di save() untuk menutup kemungkinan
+        // request langsung ke method ini lewat manipulasi Livewire payload
+        // tanpa melalui mount() yang normal.
+        if ($this->isEdit) {
+            abort_unless(auth()->user()->can('employee.edit'), 403, 'Anda tidak memiliki izin untuk mengedit data pegawai.');
+        } else {
+            abort_unless(auth()->user()->can('employee.create'), 403, 'Anda tidak memiliki izin untuk menambah data pegawai.');
+        }
+
         // Validasi + arahkan ke tab yang error
         try {
             $this->validate();

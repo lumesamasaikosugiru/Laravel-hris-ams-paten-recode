@@ -80,60 +80,119 @@ class RolePermissionSeeder extends Seeder
         $adminSdm = Role::create(['name' => 'admin_sdm', 'guard_name' => 'web']);
         $adminSdm->syncPermissions([
             'dashboard.view',
-            'master.view','master.create','master.edit','master.delete',
-            'recruitment.view','recruitment.create','recruitment.edit',
-            'recruitment.delete','recruitment.pipeline','recruitment.convert',
-            'employee.view','employee.create','employee.edit',
-            'employee.delete','employee.import','employee.probation',
-            'attendance.view','attendance.create','attendance.edit',
-            'attendance.report','attendance.export',
-            'leave.view','leave.view.subordinate','leave.create',
-            'leave.approve','leave.balance',
-            'report.view','report.export',
+            'master.view',
+            'master.create',
+            'master.edit',
+            'master.delete',
+            'recruitment.view',
+            'recruitment.create',
+            'recruitment.edit',
+            'recruitment.delete',
+            'recruitment.pipeline',
+            'recruitment.convert',
+            'employee.view',
+            'employee.create',
+            'employee.edit',
+            'employee.delete',
+            'employee.import',
+            'employee.probation',
+            'attendance.view',
+            'attendance.create',
+            'attendance.edit',
+            'attendance.report',
+            'attendance.export',
+            'leave.view',
+            'leave.view.subordinate',
+            'leave.create',
+            'leave.approve',
+            'leave.balance',
+            'report.view',
+            'report.export',
         ]);
 
-        // ── 3. STAF SDM — tanpa approve cuti & delete pegawai ─
+        // ── 3. STAF SDM ───────────────────────────────────────
+        // Akses portal (absen+cuti) DAN dashboard, absensi di
+        // dashboard READ-ONLY. Data pegawai JUGA read-only (tidak
+        // boleh create/edit/delete) — hanya bisa LIHAT.
         $stafSdm = Role::create(['name' => 'staf_sdm', 'guard_name' => 'web']);
         $stafSdm->syncPermissions([
             'dashboard.view',
-            'master.view','master.create','master.edit','master.delete',
-            'recruitment.view','recruitment.create','recruitment.edit',
-            'recruitment.delete','recruitment.pipeline','recruitment.convert',
-            'employee.view','employee.create','employee.edit',
-            'employee.import','employee.probation',
-            'attendance.view','attendance.create','attendance.edit',
-            'attendance.report','attendance.export',
-            'leave.view','leave.view.subordinate','leave.create','leave.balance',
-            'report.view','report.export',
+            'master.view',
+            'master.create',
+            'master.edit',
+            'master.delete',
+            'recruitment.view',
+            'recruitment.create',
+            'recruitment.edit',
+            'recruitment.delete',
+            'recruitment.pipeline',
+            'recruitment.convert',
+            'employee.view', // hanya lihat, tanpa create/edit/delete
+            'attendance.view', // read-only — TANPA attendance.create / attendance.edit
+            'attendance.report',
+            'attendance.export',
+            'attendance.view.own',
+            'leave.view.own',
+            'leave.create', // akses portal
+            'leave.view',
+            'leave.view.subordinate',
+            'leave.balance',
+            'report.view',
+            'report.export',
         ]);
 
-        // ── 4. SEKRETARIS — lihat+tambah+edit, tanpa hapus ───
+        // ── 4. SEKRETARIS ───────────────────────────────────────
+        // Akses portal (absen+cuti) DAN dashboard, absensi read-only.
+        // Data pegawai JUGA read-only (tidak boleh create/edit/delete).
         $sekretaris = Role::create(['name' => 'sekretaris', 'guard_name' => 'web']);
         $sekretaris->syncPermissions([
             'dashboard.view',
-            'master.view','master.create','master.edit',
-            'employee.view','employee.create','employee.edit',
-            'leave.view','leave.create',
-            'report.view','report.export',
+            'master.view',
+            'master.create',
+            'master.edit',
+            'employee.view', // hanya lihat, tanpa create/edit/delete
+            'attendance.view', // read-only — TANPA attendance.create / attendance.edit
+            'attendance.view.own',
+            'leave.view.own',
+            'leave.create', // akses portal
+            'leave.view',
+            'leave.create',
+            'report.view',
+            'report.export',
         ]);
 
-        // ── 5. KETUA — read-only + approve cuti tertentu ─────
+        // ── 5. KETUA ──────────────────────────────────────────
+        // Akses portal (absen+cuti) DAN dashboard, absensi read-only,
+        // data pegawai HANYA LIHAT (tanpa create/edit/delete).
         $ketua = Role::create(['name' => 'ketua', 'guard_name' => 'web']);
         $ketua->syncPermissions([
             'dashboard.view',
-            'employee.view',
-            'leave.view','leave.view.subordinate','leave.approve',
-            'report.view','report.export',
+            'employee.view', // hanya lihat, tanpa create/edit/delete
+            'attendance.view', // read-only — TANPA attendance.create / attendance.edit
+            'attendance.view.own',
+            'leave.view.own',
+            'leave.create', // akses portal
+            'leave.view',
+            'leave.view.subordinate',
+            'leave.approve',
+            'report.view',
+            'report.export',
         ]);
 
-        // ── 6. BENDAHARA — seperti ketua + ajukan cuti ───────
+        // ── 6. BENDAHARA ──────────────────────────────────────
+        // Akses portal (absen+cuti) DAN dashboard, absensi read-only,
+        // data pegawai HANYA LIHAT (tanpa create/edit/delete).
         $bendahara = Role::create(['name' => 'bendahara', 'guard_name' => 'web']);
         $bendahara->syncPermissions([
             'dashboard.view',
-            'employee.view',
+            'employee.view', // hanya lihat, tanpa create/edit/delete
+            'attendance.view', // read-only — TANPA attendance.create / attendance.edit
             'attendance.view.own',
-            'leave.view.own','leave.view.subordinate','leave.create',
-            'report.view','report.export',
+            'leave.view.own',
+            'leave.create', // akses portal
+            'leave.view.subordinate',
+            'report.view',
+            'report.export',
         ]);
 
         // ── 7. KEPALA BIDANG — diri sendiri + lihat cuti staf ─
@@ -142,7 +201,9 @@ class RolePermissionSeeder extends Seeder
             'dashboard.view',
             'employee.view.own',
             'attendance.view.own',
-            'leave.view.own','leave.view.subordinate','leave.create',
+            'leave.view.own',
+            'leave.view.subordinate',
+            'leave.create',
         ]);
 
         // ── 8. STAF YAYASAN — hanya data diri sendiri ────────
@@ -150,7 +211,8 @@ class RolePermissionSeeder extends Seeder
         $stafYayasan->syncPermissions([
             'employee.view.own',
             'attendance.view.own',
-            'leave.view.own','leave.create',
+            'leave.view.own',
+            'leave.create',
         ]);
 
         $this->command->info('✅ Roles & Permissions selesai!');
@@ -158,7 +220,7 @@ class RolePermissionSeeder extends Seeder
             ['Role', 'Permission'],
             Role::all()->map(fn($r) => [
                 $r->name,
-                $r->permissions->count().' permission',
+                $r->permissions->count() . ' permission',
             ])->toArray()
         );
     }

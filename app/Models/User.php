@@ -16,8 +16,15 @@ class User extends Authenticatable
         return ['email_verified_at' => 'datetime', 'password' => 'hashed'];
     }
 
+    /**
+     * Pegawai yang terhubung dengan akun ini.
+     *
+     * Foreign key ADA di tabel employees (employees.user_id),
+     * BUKAN di tabel users. Jadi relasi dari sisi User harus
+     * hasOne, bukan belongsTo.
+     */
     public function employee()
     {
-        return $this->belongsTo(Employee::class);
+        return $this->hasOne(Employee::class, 'user_id');
     }
 }

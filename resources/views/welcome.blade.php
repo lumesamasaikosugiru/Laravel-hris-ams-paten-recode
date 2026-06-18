@@ -7,7 +7,7 @@
     <title>HRIS Fatahillah — Sistem Kepegawaian Yayasan</title>
     <meta name="description"
         content="Portal akses HRIS dan Portal Pegawai Yayasan Pendidikan Fatahillah — kepegawaian, absensi, dan cuti dalam satu sistem.">
-
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo-fatahillah.jpg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link

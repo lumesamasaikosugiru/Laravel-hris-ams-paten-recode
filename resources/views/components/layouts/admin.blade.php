@@ -32,7 +32,7 @@
             height: 100vh;
             max-height: 100vh;
             overflow: hidden;
-            /* aside sendiri tidak scroll; <nav> di dalamnya yang scroll */
+            /* aside sendiri tidak scroll vertikal maupun horizontal */
         }
 
         #sidebar.sidebar-open {
@@ -129,10 +129,16 @@
             }
         }
 
-        /* Tooltip hanya relevan di mode mini desktop; sembunyikan total di mobile */
-        @media (max-width: 1023px) {
-            .nav-tooltip {
-                display: none;
+        /* Tooltip default SELALU hidden — hanya elemen di atas (scoped
+           ke #sidebar.sidebar-mini .nav-link .nav-tooltip) yang boleh
+           menampilkannya, dan itu pun hanya saat hover. */
+        .nav-tooltip {
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            #sidebar.sidebar-mini .nav-tooltip {
+                display: block;
             }
         }
     </style>
@@ -179,7 +185,7 @@
             </div>
 
             {{-- Navigation --}}
-            <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+            <nav class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-0.5">
 
                 @can('dashboard.view')
                     <a href="{{ route('dashboard') }}"

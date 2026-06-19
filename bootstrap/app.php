@@ -25,13 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Tujuan redirect untuk user yang SUDAH LOGIN tapi mencoba
         // mengakses halaman guest (/login, /register, dst).
         //
-        // Role yang masuk $portalRoles akan diarahkan ke Portal
-        // mobile (/portal). Catatan: sekretaris, bendahara, ketua,
-        // dan staf_sdm SENGAJA dimasukkan di sini meski mereka JUGA
-        // punya akses ke /dashboard (lihat routes/web.php) — karena
-        // bagi mereka, Portal adalah tujuan utama setelah login
-        // (untuk absen/cuti harian), sedangkan Dashboard diakses
-        // manual lewat menu saat dibutuhkan untuk memantau.
+        // Daftar role yang dianggap "portal" ada di SATU tempat:
+        // App\Models\User::PORTAL_ROLES — lihat komentar di sana
+        // untuk alasan sekretaris/bendahara/ketua/staf_sdm/admin_sdm ikut masuk
+        // meski mereka dual-access (juga punya dashboard.view).
         // ─────────────────────────────────────────────────────────
         RedirectIfAuthenticated::redirectUsing(function ($request) {
             $user = $request->user();
@@ -40,16 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return route('welcome');
             }
 
-            $portalRoles = [
-                'kepala_bidang',
-                'staf_yayasan',
-                'sekretaris',
-                'bendahara',
-                'ketua',
-                'staf_sdm',
-            ];
-
-            return $user->hasAnyRole($portalRoles)
+            return $user->isPortalRole()
                 ? route('portal.home')
                 : route('dashboard');
         });

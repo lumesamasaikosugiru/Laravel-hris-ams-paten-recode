@@ -18,7 +18,7 @@ return [
     | Jarak maksimum dari titik lokasi agar check-in dianggap valid.
     | 200 meter = standar untuk gedung besar / area kampus.
     */
-    'radius' => env('GEOFENCE_RADIUS', 200),
+    'radius' => env('GEOFENCE_RADIUS', 100),
 
     /*
     |--------------------------------------------------------------------------

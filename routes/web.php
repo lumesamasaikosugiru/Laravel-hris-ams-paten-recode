@@ -28,7 +28,12 @@ Route::prefix('karir')->name('careers.')->group(function () {
 
 // Portal — kepala_bidang, staf_yayasan, dan role dashboard yang
 // JUGA perlu absen/cuti harian (sekretaris, bendahara, ketua, staf_sdm)
-Route::middleware(['auth', 'role:kepala_bidang|staf_yayasan|sekretaris|bendahara|ketua|staf_sdm'])
+//
+// 'check.active' ditambahkan di sini: tanpa ini, akun yang dinonaktifkan
+// lewat Manajemen User tetap bisa terus mengakses Portal selama sesi
+// browser mereka belum berakhir, karena Laravel tidak otomatis mengecek
+// ulang status is_active pada request setelah login awal.
+Route::middleware(['auth', 'check.active', 'role:kepala_bidang|staf_yayasan|sekretaris|bendahara|ketua|staf_sdm|admin_sdm'])
     ->prefix('portal')->name('portal.')->group(function () {
         Route::get('/', [PortalController::class, 'home'])->name('home');
         Route::get('/attendance', [PortalController::class, 'attendance'])->name('attendance');
@@ -37,7 +42,10 @@ Route::middleware(['auth', 'role:kepala_bidang|staf_yayasan|sekretaris|bendahara
     });
 
 // ── Admin ────────────────────────────────────────────────────
-Route::middleware('auth')->group(function () {
+// 'check.active' dipasang di level group paling atas supaya berlaku
+// untuk SEMUA route admin & dashboard di bawahnya tanpa perlu diulang
+// satu-satu di setiap sub-route.
+Route::middleware(['auth', 'check.active'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', fn() => view('pages.dashboard'))

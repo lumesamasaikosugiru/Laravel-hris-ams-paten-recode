@@ -33,10 +33,15 @@ class AuthenticatedSessionController extends Controller
         // tidak "membajak" redirect berdasarkan role yang baru login.
         $request->session()->forget('url.intended');
 
+        // Tujuan setelah login ditentukan oleh User::isPortalRole()
+        // — SATU sumber kebenaran yang sama dipakai juga oleh
+        // RedirectIfAuthenticated di bootstrap/app.php. Jangan
+        // hardcode daftar role di sini lagi (riwayat: sebelumnya
+        // pernah out-of-sync dan menyebabkan sekretaris/bendahara/
+        // ketua/staf_sdm salah diarahkan ke dashboard saat baru login).
         $user = auth()->user();
-        $portalRoles = ['kepala_bidang', 'staf_yayasan'];
 
-        $target = $user->hasAnyRole($portalRoles)
+        $target = $user->isPortalRole()
             ? route('portal.home')
             : route('dashboard');
 

@@ -85,12 +85,12 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Staf SDM - Deni',
-                'email' => 'hris@staf.sdm.dev',
+                'email' => 'hris@staf.sdm-deni.dev',
                 'role' => 'staf_yayasan',
             ],
             [
                 'name' => 'Staf SDM - Muah',
-                'email' => 'hris@staf.sdm.dev',
+                'email' => 'hris@staf.sdm-muah.dev',
                 'role' => 'staf_yayasan',
             ],
         ];

@@ -77,6 +77,11 @@ class RolePermissionSeeder extends Seeder
         $superAdmin->syncPermissions(Permission::all());
 
         // ── 2. ADMIN SDM — hampir penuh kecuali user.manage ──
+        // Dual-access sejak penambahan admin_sdm ke User::PORTAL_ROLES:
+        // bisa absen & ajukan cuti sendiri lewat Portal (attendance.view.own,
+        // leave.view.own), SELAIN tetap punya akses penuh Dashboard di
+        // bawah. Pola permission .view.own ini disamakan dengan role
+        // dual-access lain (staf_sdm, sekretaris, bendahara, ketua).
         $adminSdm = Role::create(['name' => 'admin_sdm', 'guard_name' => 'web']);
         $adminSdm->syncPermissions([
             'dashboard.view',
@@ -97,11 +102,13 @@ class RolePermissionSeeder extends Seeder
             'employee.import',
             'employee.probation',
             'attendance.view',
+            'attendance.view.own',
             'attendance.create',
             'attendance.edit',
             'attendance.report',
             'attendance.export',
             'leave.view',
+            'leave.view.own',
             'leave.view.subordinate',
             'leave.create',
             'leave.approve',

@@ -58,6 +58,7 @@ class RolePermissionSeeder extends Seeder
             'leave.view.subordinate',
             'leave.create',
             'leave.approve',
+            'leave.approve.school',
             'leave.balance',
 
             // Laporan
@@ -220,6 +221,53 @@ class RolePermissionSeeder extends Seeder
             'attendance.view.own',
             'leave.view.own',
             'leave.create',
+        ]);
+
+        // ── 9. GURU — portal-only, sama dengan staf_yayasan ──
+        // Pengajuan cutinya WAJIB lewat approval Kepala Sekolah dulu
+        // (lihat LeaveService::ROLES_REQUIRE_SCHOOL_APPROVAL), baru
+        // diproses Admin SDM/Ketua. Tidak ada akses Dashboard sama
+        // sekali, persis seperti staf_yayasan/kepala_bidang.
+        $guru = Role::create(['name' => 'guru', 'guard_name' => 'web']);
+        $guru->syncPermissions([
+            'employee.view.own',
+            'attendance.view.own',
+            'leave.view.own',
+            'leave.create',
+        ]);
+
+        // ── 10. NON GURU (sekolah) — portal-only, sama dgn guru ──
+        // Untuk staf non-pengajar di lingkungan sekolah (TU, dst),
+        // BUKAN staf yayasan pusat. Aturan approval cuti sama
+        // dengan guru: wajib lewat Kepala Sekolah dulu.
+        $nonGuru = Role::create(['name' => 'non_guru', 'guard_name' => 'web']);
+        $nonGuru->syncPermissions([
+            'employee.view.own',
+            'attendance.view.own',
+            'leave.view.own',
+            'leave.create',
+        ]);
+
+        // ── 11. KEPALA SEKOLAH — portal-only + approval tahap 1 ──
+        // Satu role generik dipakai oleh SEMUA Kepala Sekolah di
+        // semua unit. TIDAK ada role terpisah per sekolah (mis.
+        // kepsek_smk1, kepsek_smk2) -- scoping "Kepsek ini cuma boleh
+        // approve cuti guru di SEKOLAHNYA SENDIRI" dikerjakan lewat
+        // LOGIC (bandingkan employee->school_id milik akun Kepsek
+        // yang login dengan school_id pengaju cuti), BUKAN lewat
+        // permission/role terpisah per sekolah. Lihat
+        // LeaveSchoolApproval.php (Livewire Portal) untuk
+        // implementasi scoping-nya. Akun Kepsek WAJIB terhubung ke
+        // Employee dengan posisi 'Kepala Sekolah' di sekolah terkait
+        // (employees.user_id -> users.id, lalu employees.school_id
+        // menentukan sekolah mana yang ia boleh approve).
+        $kepalaSekolah = Role::create(['name' => 'kepala_sekolah', 'guard_name' => 'web']);
+        $kepalaSekolah->syncPermissions([
+            'employee.view.own',
+            'attendance.view.own',
+            'leave.view.own',
+            'leave.create',
+            'leave.approve.school',
         ]);
 
         $this->command->info('✅ Roles & Permissions selesai!');

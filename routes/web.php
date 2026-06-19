@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Public\CareerController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\Admin\UserController;
+use App\Models\User;
 
 // ── Public ──────────────────────────────────────────────────
 
@@ -26,14 +27,18 @@ Route::prefix('karir')->name('careers.')->group(function () {
     Route::get('/{jobVacancy}/daftar', [CareerController::class, 'apply'])->name('apply');
 });
 
-// Portal — kepala_bidang, staf_yayasan, dan role dashboard yang
-// JUGA perlu absen/cuti harian (sekretaris, bendahara, ketua, staf_sdm)
+// Portal — semua role di App\Models\User::PORTAL_ROLES (SATU sumber
+// kebenaran, dipakai juga oleh AuthenticatedSessionController dan
+// bootstrap/app.php untuk redirect setelah login). JANGAN hardcode
+// daftar role di sini lagi -- riwayat: sebelumnya ada 3 tempat dengan
+// daftar role yang berbeda-beda dan sempat out-of-sync, menyebabkan
+// bug redirect (lihat README.md Changelog 19 Juni 2026).
 //
 // 'check.active' ditambahkan di sini: tanpa ini, akun yang dinonaktifkan
 // lewat Manajemen User tetap bisa terus mengakses Portal selama sesi
 // browser mereka belum berakhir, karena Laravel tidak otomatis mengecek
 // ulang status is_active pada request setelah login awal.
-Route::middleware(['auth', 'check.active', 'role:kepala_bidang|staf_yayasan|sekretaris|bendahara|ketua|staf_sdm|admin_sdm'])
+Route::middleware(['auth', 'check.active', 'role:' . implode('|', User::PORTAL_ROLES)])
     ->prefix('portal')->name('portal.')->group(function () {
         Route::get('/', [PortalController::class, 'home'])->name('home');
         Route::get('/attendance', [PortalController::class, 'attendance'])->name('attendance');

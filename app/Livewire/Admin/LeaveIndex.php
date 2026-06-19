@@ -180,6 +180,8 @@ class LeaveIndex extends Component
             $docPath = $this->document_file->store('leaves/documents', 'public');
         }
 
+        $requiresSchoolApproval = LeaveService::requiresSchoolApproval($employee);
+
         LeaveRequest::create([
             'employee_id' => $this->selectedEmployeeId,
             'leave_type_id' => $this->leave_type_id,
@@ -189,6 +191,8 @@ class LeaveIndex extends Component
             'reason' => $this->reason,
             'document_file' => $docPath,
             'status' => 'pending',
+            'requires_school_approval' => $requiresSchoolApproval,
+            'school_status' => $requiresSchoolApproval ? 'pending' : null,
         ]);
 
         session()->flash('success', 'Pengajuan cuti berhasil disimpan.');
@@ -207,14 +211,27 @@ class LeaveIndex extends Component
 
     public function processLeave(): void
     {
+        $request = LeaveRequest::with('employee')->findOrFail($this->processingId);
+
+        // Guard: pengajuan dari guru/non_guru WAJIB disetujui Kepala
+        // Sekolah dulu sebelum bisa diproses SDM/Ketua di sini.
+        if ($request->requires_school_approval && $request->school_status !== 'approved') {
+            $this->showApproveModal = false;
+            session()->flash(
+                'error',
+                $request->school_status === 'rejected'
+                ? 'Pengajuan ini sudah ditolak oleh Kepala Sekolah, tidak dapat diproses lebih lanjut.'
+                : 'Pengajuan ini masih menunggu persetujuan Kepala Sekolah terkait, belum bisa diproses di sini.'
+            );
+            return;
+        }
+
         $this->validate([
             'approverNotes' => $this->approveAction === 'rejected' ? 'required|string|min:5' : 'nullable|string',
         ], [
             'approverNotes.required' => 'Alasan penolakan wajib diisi.',
             'approverNotes.min' => 'Alasan minimal 5 karakter.',
         ]);
-
-        $request = LeaveRequest::with('employee')->findOrFail($this->processingId);
 
         DB::transaction(function () use ($request) {
             $request->update([

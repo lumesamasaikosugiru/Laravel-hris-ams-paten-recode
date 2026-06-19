@@ -21,6 +21,13 @@ class LeaveService
     /** Jenis cuti yang tidak boleh diambil guru (by nama) */
     const EXCLUDED_FOR_GURU = ['cuti tahunan'];
 
+    /**
+     * Role yang pengajuan cutinya WAJIB lewat approval Kepala Sekolah
+     * dulu (tahap 1) sebelum bisa diproses Admin SDM/Ketua (tahap 2).
+     * Role lain di luar daftar ini tetap approval 1 tahap seperti biasa.
+     */
+    const ROLES_REQUIRE_SCHOOL_APPROVAL = ['guru', 'non_guru'];
+
     // ── Validasi ──────────────────────────────────────────────
 
     /**
@@ -143,5 +150,23 @@ class LeaveService
             'min_start_date' => self::minStartDate(),
             'excluded_guru' => self::EXCLUDED_FOR_GURU,
         ];
+    }
+
+    /**
+     * Apakah pengajuan cuti milik $employee ini wajib lewat tahap
+     * approval Kepala Sekolah dulu, berdasarkan ROLE akun User yang
+     * terhubung ke employee tersebut (bukan flag is_guru/employee_type).
+     *
+     * Employee tanpa akun User (user_id null) dianggap TIDAK butuh
+     * approval sekolah -- mereka tidak bisa mengajukan cuti sendiri
+     * lewat Portal sama sekali (cuti diinput manual oleh SDM lewat
+     * Dashboard untuk kasus seperti ini, di luar scope 2-tahap ini).
+     */
+    public static function requiresSchoolApproval(Employee $employee): bool
+    {
+        if (!$employee->user_id) {
+            return false;
+        }
+        return $employee->user?->hasAnyRole(self::ROLES_REQUIRE_SCHOOL_APPROVAL) ?? false;
     }
 }

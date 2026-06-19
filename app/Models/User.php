@@ -26,12 +26,15 @@ class User extends Authenticatable
      *   (redirect saat user yang sudah login mencoba akses halaman guest)
      *
      * PENTING: kepala_bidang & staf_yayasan TIDAK punya dashboard.view
-     * sama sekali (portal-only). sekretaris, bendahara, ketua, staf_sdm
-     * bersifat dual-access — mereka JUGA punya dashboard.view, tapi
-     * Portal tetap jadi tujuan utama setelah login karena dipakai untuk
-     * absen/cuti harian; Dashboard diakses manual lewat menu saat
-     * dibutuhkan untuk memantau. Jangan hapus salah satu role dari sini
-     * tanpa mengecek ulang routes/web.php prefix('portal').
+     * sama sekali (portal-only). sekretaris, bendahara, ketua, staf_sdm,
+     * admin_sdm bersifat dual-access — mereka JUGA punya dashboard.view,
+     * tapi Portal tetap jadi tujuan utama setelah login karena dipakai
+     * untuk absen/cuti harian; Dashboard diakses manual lewat menu saat
+     * dibutuhkan untuk memantau. guru, non_guru, kepala_sekolah adalah
+     * role portal-only di lingkungan SEKOLAH (bukan yayasan pusat) —
+     * sama sekali tidak punya dashboard.view, persis seperti
+     * staf_yayasan/kepala_bidang. Jangan hapus salah satu role dari
+     * sini tanpa mengecek ulang routes/web.php prefix('portal').
      */
     public const PORTAL_ROLES = [
         'kepala_bidang',
@@ -41,6 +44,9 @@ class User extends Authenticatable
         'ketua',
         'staf_sdm',
         'admin_sdm',
+        'guru',
+        'non_guru',
+        'kepala_sekolah',
     ];
 
     /**

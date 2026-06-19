@@ -52,7 +52,7 @@ Edit `.env`:
 
 ```env
 DB_DATABASE=hrisv1
-DB_USERNAME=
+DB_USERNAME=root
 DB_PASSWORD=
 APP_TIMEZONE=Asia/Jakarta
 
@@ -113,7 +113,7 @@ Diisi via `UserSeeder.php`. Semua akun di bawah dibuat otomatis saat `php artisa
 
 ### ✅ Phase 1 — Fondasi & Master Data
 
-- Auth via Laravel Breeze + Spatie Permission (**8 roles**, lihat bagian Roles)
+- Auth via Laravel Breeze + Spatie Permission (**11 roles**, lihat bagian Roles)
 - CRUD: Sekolah, Departemen, Jabatan, Skill, Jenis Cuti
 - Seeder struktur Yayasan Fatahillah
 
@@ -149,6 +149,7 @@ Diisi via `UserSeeder.php`. Semua akun di bawah dibuat otomatis saat `php artisa
 - Pengajuan cuti dengan validasi aturan bisnis terpusat via `LeaveService`
 - Pengajuan cuti mandiri via Portal Mobile
 - Approval flow: Pending → Disetujui/Ditolak (permission `leave.approve`, dipegang `admin_sdm` & `ketua`)
+- **Approval 2 tahap untuk guru & non-guru sekolah** — Kepala Sekolah (tahap 1) → Admin SDM/Ketua (tahap 2). Lihat bagian **Approval Cuti 2 Tahap** di bawah.
 
 ### ✅ Phase 6 — Dashboard & Laporan
 
@@ -343,22 +344,40 @@ php artisan hris:check-probation
 
 ---
 
-## Roles (8 Role — Struktur Kepengurusan Yayasan)
+## Roles (11 Role — Struktur Kepengurusan Yayasan + Lingkungan Sekolah)
 
-> ⚠️ Role di bawah ini **menggantikan total** role generik versi lama (`admin_hr`, `kepala_sekolah`, `pegawai`, `guru`, dst yang sempat tercatat di README versi sebelumnya — sudah tidak berlaku).
+> ⚠️ Role di bawah ini **menggantikan total** role generik versi lama (`admin_hr`, `kepala_sekolah` generik lama, `pegawai`, `guru` generik lama, dst yang sempat tercatat di README versi sebelumnya — sudah tidak berlaku dengan definisi yang sama).
 
-| Role            | Siapa                             |          Dashboard           |               Portal               | Data Pegawai |
-| --------------- | --------------------------------- | :--------------------------: | :--------------------------------: | :----------: |
-| `super_admin`   | Staf IT                           |   Penuh (+ `user.manage`)    |                 ✅                 |    Penuh     |
-| `admin_sdm`     | Kepala Bidang SDM                 |         Hampir penuh         |           ✅ **(baru)**            |    Penuh     |
-| `staf_sdm`      | Staf Bidang SDM                   | Sebagian, employee read-only |                 ✅                 |  Read-only   |
-| `sekretaris`    | Sekretaris YPFC                   |           Sebagian           |                 ✅                 |  Read-only   |
-| `bendahara`     | Bendahara YPFC                    |           Terbatas           |                 ✅                 |  Read-only   |
-| `ketua`         | Ketua Yayasan                     |  Terbatas + `leave.approve`  |                 ✅                 |  Read-only   |
-| `kepala_bidang` | Kabid P2MP/Keuangan/Sarpras/Humas |         ❌ Tidak ada         | ✅ (profil, absensi, cuti sendiri) |      ❌      |
-| `staf_yayasan`  | Staf umum yayasan                 |         ❌ Tidak ada         | ✅ (profil, absensi, cuti sendiri) |      ❌      |
+| Role             | Siapa                               |          Dashboard           |                                      Portal                                       | Data Pegawai |
+| ---------------- | ----------------------------------- | :--------------------------: | :-------------------------------------------------------------------------------: | :----------: |
+| `super_admin`    | Staf IT                             |   Penuh (+ `user.manage`)    |                                        ✅                                         |    Penuh     |
+| `admin_sdm`      | Kepala Bidang SDM                   |         Hampir penuh         |                                        ✅                                         |    Penuh     |
+| `staf_sdm`       | Staf Bidang SDM                     | Sebagian, employee read-only |                                        ✅                                         |  Read-only   |
+| `sekretaris`     | Sekretaris YPFC                     |           Sebagian           |                                        ✅                                         |  Read-only   |
+| `bendahara`      | Bendahara YPFC                      |           Terbatas           |                                        ✅                                         |  Read-only   |
+| `ketua`          | Ketua Yayasan                       |  Terbatas + `leave.approve`  |                                        ✅                                         |  Read-only   |
+| `kepala_bidang`  | Kabid P2MP/Keuangan/Sarpras/Humas   |         ❌ Tidak ada         |                        ✅ (profil, absensi, cuti sendiri)                         |      ❌      |
+| `staf_yayasan`   | Staf umum yayasan                   |         ❌ Tidak ada         |                        ✅ (profil, absensi, cuti sendiri)                         |      ❌      |
+| `guru`           | Guru tetap/tidak tetap (sekolah)    |         ❌ Tidak ada         |            ✅ (profil, absensi, cuti — **wajib approval Kepsek dulu**)            |      ❌      |
+| `non_guru`       | Staf non-pengajar sekolah (TU, dst) |         ❌ Tidak ada         |                              ✅ (sama seperti guru)                               |      ❌      |
+| `kepala_sekolah` | Kepala Sekolah tiap unit **(baru)** |         ❌ Tidak ada         | ✅ (profil, absensi, cuti sendiri + **approve cuti guru/non-guru di sekolahnya**) |      ❌      |
 
-Daftar role mana yang dianggap "tujuan utama Portal setelah login" ada di **satu tempat saja**: `App\Models\User::PORTAL_ROLES`. Jangan ubah daftar role dual-access di `routes/web.php` tanpa menyamakan juga konstanta ini.
+Daftar role mana yang dianggap "tujuan utama Portal setelah login" ada di **satu tempat saja**: `App\Models\User::PORTAL_ROLES`. `routes/web.php` juga membaca konstanta ini langsung (`implode('|', User::PORTAL_ROLES)`) — jangan hardcode daftar role lagi di route manapun.
+
+### Approval Cuti 2 Tahap (Guru & Non-Guru Sekolah)
+
+Sejak penambahan role `guru`, `non_guru`, dan `kepala_sekolah`, pengajuan cuti dari kedua role pertama **wajib** lewat 2 tahap:
+
+1. **Tahap 1 — Kepala Sekolah.** Disetujui/ditolak lewat halaman `/portal/leave` (section khusus yang hanya tampil untuk role `kepala_sekolah`). Kepsek **hanya** bisa memproses pengajuan dari pegawai di sekolahnya sendiri (`employee.school_id` sama) — scoping dikerjakan lewat logic, bukan lewat role terpisah per sekolah (lihat `PortalLeave::getKepalaSekolahSchoolId()`).
+2. **Tahap 2 — Admin SDM / Ketua.** Sama seperti pengajuan role lain, lewat `/admin/leaves`. **Tidak akan muncul sebagai actionable** sebelum tahap 1 disetujui (lihat `LeaveRequest::ready_for_sdm` dan guard di `LeaveIndex::processLeave()`).
+
+Kalau Kepsek menolak di tahap 1, pengajuan langsung **final ditolak** — tidak diteruskan ke SDM untuk diproses ulang.
+
+Halaman `/portal/leave` untuk role `kepala_sekolah` menampilkan 3 section: **Menunggu Persetujuan Anda** (pengajuan guru/non-guru di sekolahnya yang masih `school_status=pending`), **Riwayat Diproses** (collapsible — semua yang sudah dia/Kepsek sebelumnya approve/tolak di sekolah itu, beserta status lanjutan di SDM/Ketua), dan **Riwayat Pengajuan** pribadi (cuti milik Kepsek sendiri — section yang sama dipakai semua role, otomatis berlaku karena Kepsek juga punya record `Employee`).
+
+Akun Kepala Sekolah **wajib** terhubung ke `Employee` dengan posisi "Kepala Sekolah" di sekolah yang sesuai (`employees.user_id` → `users.id`, lalu `employees.school_id` menentukan sekolah mana yang ia boleh approve). Role ini **satu role generik** dipakai semua Kepsek di semua unit — bukan role terpisah per sekolah (`kepsek_smk1`, dst).
+
+Implementasi: kolom baru di `leave_requests` (`requires_school_approval`, `school_status`, `school_approved_by`, `school_approved_at`, `school_rejection_note`) — kolom `status` utama **tidak diubah artinya**, tetap berarti "keputusan akhir" untuk semua role seperti sebelumnya.
 
 ---
 
@@ -419,7 +438,7 @@ Daftar role mana yang dianggap "tujuan utama Portal setelah login" ada di **satu
 Daftar lebih detail ada di Bab 12 Dokumen Master. Ringkasan yang paling relevan untuk kerja harian:
 
 - ⚠️ **Radius geofencing belum final secara bisnis** — sudah berubah beberapa kali (200m → 100m), PRD lama pernah menyebut 500m. Cek `.env` / `config/geofence.php` sebelum anggap nilai ini stabil.
-- ⚠️ **Defense-in-depth (`abort_unless`) baru ada di 3 dari 17 komponen Livewire Admin** — `EmployeeForm`, `EmployeeDetail`, `EmployeeImport`. Komponen lain (termasuk `LeaveIndex`, `OffsiteApproval`, `UserManagement`) hanya dilindungi Blade `@can` + middleware route.
+- ⚠️ **Defense-in-depth (`abort_unless`) baru ada di sebagian komponen Livewire Admin** — `EmployeeForm`, `EmployeeDetail`, `EmployeeImport`, dan (sejak 19 Juni 2026) `LeaveIndex::openApproveModal()`/`processLeave()`. Komponen lain (`OffsiteApproval`, `UserManagement`, dst) masih hanya dilindungi Blade `@can` + middleware route.
 - ⚠️ **Rantai approval cuti per-role belum diimplementasikan** — siapa pun dengan permission `leave.approve` (`admin_sdm`, `ketua`) bisa approve pengajuan siapa saja, tanpa validasi "approver yang seharusnya" sesuai jabatan pengaju.
 - ⚠️ **Constraint unique `attendances` cuma `(employee_id, date)`**, tidak menyertakan `school_id` — berisiko error saat pegawai dengan tugas tambahan absen di dua sekolah berbeda pada tanggal yang sama. Belum diuji skenario nyatanya.
 - ⚠️ Dua lokasi di `config/geofence.php` (`SMK YP. Fatahillah 1 Cilegon Kampus 1` dan `SMK YP. Fatahillah 2 Cilegon`) punya koordinat identik — perlu dicek apakah disengaja.
@@ -498,6 +517,21 @@ php artisan hris:check-probation               # Manual cek masa percobaan
 ---
 
 ## Changelog
+
+### 19 Juni 2026 (lanjutan #2 — fix permission approve & riwayat Kepsek)
+
+- **Fix bug:** tombol "Setujui/Tolak" di `/admin/leaves` muncul untuk role yang tidak punya permission `leave.approve` (mis. `sekretaris`) — Blade tidak pernah dibungkus `@can('leave.approve')`, hanya mengandalkan status pengajuan. Ditambahkan `@can('leave.approve')` di view, plus `abort_unless(...->can('leave.approve'))` di `LeaveIndex::openApproveModal()` dan `processLeave()` (defense-in-depth, sebelumnya komponen ini tidak punya lapis 3 sama sekali).
+- **Section baru di Portal untuk `kepala_sekolah`:** "Riwayat Diproses" (collapsible) di `/portal/leave` — menampilkan semua pengajuan guru/non-guru di sekolahnya yang sudah pernah ia approve/tolak, lengkap dengan status lanjutan di SDM/Ketua. Ditampilkan terlepas dari siapa yang sedang login (riwayat sekolah, bukan riwayat per-akun Kepsek), supaya tetap utuh kalau ada pergantian Kepala Sekolah.
+- Riwayat cuti pribadi Kepsek (cuti miliknya sendiri) sudah otomatis tampil tanpa perubahan tambahan, karena memakai section "Riwayat Pengajuan" yang sama dengan semua role lain.
+
+### 19 Juni 2026 (lanjutan — role sekolah & approval 2 tahap)
+
+- **Role baru:** `guru`, `non_guru`, `kepala_sekolah` — portal-only, ditambahkan ke `User::PORTAL_ROLES` dan `routes/web.php` (sekarang baca langsung dari konstanta, tidak hardcode lagi).
+- **Approval cuti 2 tahap** untuk `guru`/`non_guru`: Kepala Sekolah (scoped ke sekolahnya sendiri, by data bukan by role per sekolah) → Admin SDM/Ketua. Lihat bagian **Approval Cuti 2 Tahap** di atas.
+- Migration baru `add_school_approval_to_leave_requests` — kolom `requires_school_approval`, `school_status`, `school_approved_by`, `school_approved_at`, `school_rejection_note` di `leave_requests`. Kolom `status` lama TIDAK diubah maknanya.
+- Permission baru `leave.approve.school`, khusus role `kepala_sekolah`.
+- UI approval Kepsek digabung ke halaman Portal cuti yang sudah ada (`/portal/leave`), bukan halaman terpisah.
+- **Belum dikerjakan:** akun dev contoh untuk role baru ini belum ditambahkan ke `UserSeeder.php` — perlu dibuat manual via Manajemen User atau menyusul di sesi berikutnya.
 
 ### 19 Juni 2026
 

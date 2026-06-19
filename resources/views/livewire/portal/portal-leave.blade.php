@@ -42,6 +42,65 @@
         </div>
     @endif
 
+    {{-- ════════════════════════════════════════════════════════
+         RIWAYAT YANG SUDAH DIPROSES KEPALA SEKOLAH (approved/rejected)
+    ════════════════════════════════════════════════════════ --}}
+    @if ($schoolHistory->count() > 0)
+        <div class="portal-card overflow-hidden" x-data="{ open: false }">
+            <button @click="open = !open" type="button"
+                class="w-full px-5 py-3 border-b border-gray-100 flex items-center justify-between text-left">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Riwayat Diproses ({{ $schoolHistory->count() }})
+                </p>
+                <svg class="w-4 h-4 text-gray-400 transition-transform" :class="open && 'rotate-180'" fill="none"
+                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                </svg>
+            </button>
+            <div x-show="open" x-transition class="divide-y divide-gray-100">
+                @foreach ($schoolHistory as $h)
+                    <div class="px-5 py-3">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm font-semibold text-gray-700">{{ $h->employee->name }}</p>
+                            <span
+                                class="status-chip text-xs {{ $h->school_status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                {{ $h->school_status === 'approved' ? '✓ Disetujui' : '✕ Ditolak' }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            {{ $h->leaveType->name }} ·
+                            {{ $h->start_date->format('d M') }}
+                            @if ($h->start_date->ne($h->end_date))
+                                — {{ $h->end_date->format('d M Y') }}
+                            @else
+                                {{ $h->start_date->format('Y') }}
+                            @endif
+                            · {{ $h->days }} hari
+                        </p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            Diproses {{ $h->school_approved_at?->format('d M Y, H:i') }}
+                            @if ($h->schoolApprovedBy)
+                                oleh {{ $h->schoolApprovedBy->name }}
+                            @endif
+                        </p>
+                        @if ($h->school_status === 'rejected' && $h->school_rejection_note)
+                            <p class="text-xs text-red-400 mt-1 italic">Alasan: {{ $h->school_rejection_note }}</p>
+                        @endif
+                        @if ($h->school_status === 'approved')
+                            <p class="text-xs text-gray-400 mt-1">
+                                Status SDM/Ketua:
+                                <span
+                                    class="font-medium {{ $h->status === 'approved' ? 'text-green-600' : ($h->status === 'rejected' ? 'text-red-500' : 'text-amber-500') }}">
+                                    {{ $h->status === 'approved' ? 'Disetujui' : ($h->status === 'rejected' ? 'Ditolak' : 'Menunggu') }}
+                                </span>
+                            </p>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- Modal konfirmasi approval Kepala Sekolah --}}
     @if ($showSchoolApproveModal)
         <div class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
@@ -182,7 +241,8 @@
 
             {{-- Alasan --}}
             <div>
-                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Alasan *</label>
+                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Alasan
+                    *</label>
                 <textarea wire:model="reason" rows="3" placeholder="Jelaskan alasan pengajuan cuti..."
                     class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none @error('reason') border-red-400 @enderror"></textarea>
                 @error('reason')

@@ -82,6 +82,13 @@
                         </td>
                         <td class="text-center">
                             <span class="badge {{ $req->status_color }}">{{ $req->status_label }}</span>
+                            @if ($req->requires_school_approval && $req->school_status !== 'approved')
+                                <br>
+                                <span
+                                    class="badge {{ $req->school_status === 'rejected' ? 'badge-red' : 'bg-orange-100 text-orange-700' }} text-xs mt-1">
+                                    {{ $req->school_status_label }}
+                                </span>
+                            @endif
                         </td>
                         <td class="text-center">
                             <div class="flex items-center justify-center gap-1">
@@ -96,26 +103,33 @@
                                             d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                     </svg>
                                 </button>
-                                {{-- Approve --}}
-                                @if ($req->status === 'pending')
-                                    <button wire:click="openApproveModal({{ $req->id }},'approved')"
-                                        class="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition"
-                                        title="Setujui">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                        </svg>
-                                    </button>
-                                    <button wire:click="openApproveModal({{ $req->id }},'rejected')"
-                                        class="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition" title="Tolak">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                        </svg>
-                                    </button>
-                                @endif
+                                {{-- Approve — hanya jika: (1) pending, (2) lolos approval sekolah jika perlu, (3) user login PUNYA permission leave.approve. Poin 3 ditambahkan karena sebelumnya tombol ini muncul untuk role yang tidak punya leave.approve sama sekali (mis. sekretaris). --}}
+                                @can('leave.approve')
+                                    @if ($req->status === 'pending' && $req->ready_for_sdm)
+                                        <button wire:click="openApproveModal({{ $req->id }},'approved')"
+                                            class="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition"
+                                            title="Setujui">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            </svg>
+                                        </button>
+                                        <button wire:click="openApproveModal({{ $req->id }},'rejected')"
+                                            class="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition" title="Tolak">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            </svg>
+                                        </button>
+                                    @elseif ($req->status === 'pending' && !$req->ready_for_sdm)
+                                        <span class="text-[10px] text-amber-500 italic px-1"
+                                            title="Menunggu approval Kepala Sekolah">
+                                            🔒 {{ $req->school_status_label }}
+                                        </span>
+                                    @endif
+                                @endcan
                             </div>
                         </td>
                     </tr>

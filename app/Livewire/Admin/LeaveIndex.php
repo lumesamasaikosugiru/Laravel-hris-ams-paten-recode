@@ -202,6 +202,8 @@ class LeaveIndex extends Component
     // ── Approve / Reject ──────────────────────────────────────
     public function openApproveModal(int $id, string $action): void
     {
+        abort_unless(auth()->user()->can('leave.approve'), 403);
+
         $this->processingId = $id;
         $this->approveAction = $action;
         $this->approverNotes = '';
@@ -211,6 +213,8 @@ class LeaveIndex extends Component
 
     public function processLeave(): void
     {
+        abort_unless(auth()->user()->can('leave.approve'), 403);
+
         $request = LeaveRequest::with('employee')->findOrFail($this->processingId);
 
         // Guard: pengajuan dari guru/non_guru WAJIB disetujui Kepala

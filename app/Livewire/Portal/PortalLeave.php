@@ -277,9 +277,24 @@ class PortalLeave extends Component
                 ->get()
             : collect();
 
+        // Riwayat pengajuan guru/non_guru di sekolah ini yang SUDAH
+        // diproses (approved/rejected) oleh Kepala Sekolah mana pun
+        // yang pernah bertugas di sekolah ini -- bukan hanya yang
+        // diproses Kepsek yang sedang login, supaya riwayat tetap utuh
+        // walau terjadi pergantian Kepala Sekolah.
+        $schoolHistory = $kepsekSchoolId
+            ? LeaveRequest::where('requires_school_approval', true)
+                ->whereIn('school_status', ['approved', 'rejected'])
+                ->whereHas('employee', fn($q) => $q->where('school_id', $kepsekSchoolId))
+                ->with('employee', 'leaveType', 'schoolApprovedBy')
+                ->latest('school_approved_at')
+                ->limit(15)
+                ->get()
+            : collect();
+
         return view(
             'livewire.portal.portal-leave',
-            compact('employee', 'requests', 'balances', 'leaveTypes', 'schoolApprovals')
+            compact('employee', 'requests', 'balances', 'leaveTypes', 'schoolApprovals', 'schoolHistory')
         );
     }
 }

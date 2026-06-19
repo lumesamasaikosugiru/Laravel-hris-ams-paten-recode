@@ -16,7 +16,13 @@ return [
     | Radius Toleransi (meter)
     |--------------------------------------------------------------------------
     | Jarak maksimum dari titik lokasi agar check-in dianggap valid.
-    | 200 meter = standar untuk gedung besar / area kampus.
+    |
+    | KEPUTUSAN FINAL (19 Juni 2026): 100 meter, SERAGAM untuk semua unit.
+    | Riwayat nilai sebelumnya: 500m (sempat tertulis di PRD v1.4, tidak pernah
+    | jadi nilai aktual di kode) -> 200m (default awal saat fitur ini pertama
+    | dibuat) -> 100m (nilai final saat ini). Opsi radius berbeda per unit
+    | sudah dipertimbangkan dan SENGAJA tidak dipakai — yayasan memilih satu
+    | nilai seragam untuk semua lokasi demi kesederhanaan.
     */
     'radius' => env('GEOFENCE_RADIUS', 100),
 
@@ -33,6 +39,11 @@ return [
     |--------------------------------------------------------------------------
     | Lokasi Resmi Yayasan Fatahillah
     |--------------------------------------------------------------------------
+    | CATATAN: 'SMK YP. Fatahillah 1 Cilegon Kampus 1' dan 'SMK YP. Fatahillah
+    | 2 Cilegon' SENGAJA punya koordinat identik (-6.010683, 106.032977) --
+    | satu lokasi/gedung fisik yang sama, ditempati dua unit administratif
+    | berbeda. Ini BUKAN bug/typo, dikonfirmasi 19 Juni 2026. Jangan "perbaiki"
+    | salah satu koordinatnya tanpa konfirmasi ulang ke yayasan.
     */
     'locations' => [
         [

@@ -31,7 +31,14 @@
             transform: translateX(-100%);
             transition: transform 0.25s ease, width 0.2s ease;
             height: 100vh;
+            height: 100dvh;
+            /* mobile: hitung tinggi viewport yang BENAR-BENAR
+                                terlihat saat address bar masih tampil, bukan
+                                tinggi maksimum saat address bar tersembunyi.
+                                100vh tanpa ini menyebabkan sidebar lebih tinggi
+                                dari layar sehingga menu bawah terpotong. */
             max-height: 100vh;
+            max-height: 100dvh;
             overflow: hidden;
             /* aside sendiri tidak scroll vertikal maupun horizontal */
         }
@@ -156,7 +163,7 @@
         <aside id="sidebar" class="bg-sidebar w-64 flex flex-col shrink-0 shadow-xl">
 
             {{-- Logo + tombol close (mobile) --}}
-            <div class="sidebar-brand-row flex items-center gap-3 px-5 py-4 border-b border-white/10">
+            <div class="sidebar-brand-row flex items-center gap-3 px-5 py-4 border-b border-white/10 shrink-0">
                 <img src="{{ asset('images/logo-fatahillah.jpg') }}" alt="Logo Yayasan Fatahillah"
                     class="w-9 h-9 rounded-lg object-cover shrink-0">
                 <div class="overflow-hidden flex-1 sidebar-text">
@@ -173,7 +180,7 @@
             </div>
 
             {{-- User --}}
-            <div class="sidebar-user-row flex items-center gap-3 px-5 py-3 border-b border-white/10">
+            <div class="sidebar-user-row flex items-center gap-3 px-5 py-3 border-b border-white/10 shrink-0">
                 <div
                     class="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
                     {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
@@ -186,7 +193,7 @@
             </div>
 
             {{-- Navigation --}}
-            <nav class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-0.5">
+            <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-0.5">
 
                 @can('dashboard.view')
                     <a href="{{ route('dashboard') }}"
@@ -376,7 +383,7 @@
 
             {{-- Collapse toggle (desktop only) --}}
             <button onclick="window.toggleSidebarMini()"
-                class="sidebar-collapse-btn nav-link hidden lg:flex items-center gap-3 mx-3 mb-1"
+                class="sidebar-collapse-btn nav-link hidden lg:flex items-center gap-3 mx-3 mb-1 shrink-0"
                 style="color: var(--c-sb-muted)">
                 <svg class="w-4 h-4 shrink-0 transition-transform" fill="none" viewBox="0 0 24 24"
                     stroke-width="1.5" stroke="currentColor">
@@ -388,7 +395,7 @@
             </button>
 
             {{-- Logout --}}
-            <div class="px-3 py-3 border-t border-white/10">
+            <div class="px-3 py-3 border-t border-white/10 shrink-0">
                 @can('user.manage')
                     <div class="sb-section">Sistem</div>
                     <a href="{{ route('admin.users.index') }}"

@@ -22,8 +22,8 @@ class Attendance extends Model
     protected $casts = ['date' => 'date'];
 
     // Jam masuk standar (bisa dikonfigurasi nanti)
-    const WORK_START = '07:30';
-    const WORK_END = '16:00';
+    const WORK_START = '07:00';
+    const WORK_END = '15:00';
 
     public function employee()
     {

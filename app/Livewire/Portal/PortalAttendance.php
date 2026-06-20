@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Employee;
 use App\Services\GeofenceService;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Livewire\Component;
 
 class PortalAttendance extends Component
@@ -199,31 +200,41 @@ class PortalAttendance extends Component
         $status = $checkInTime->gt($workStart) ? 'late' : 'present';
         $lateMinutes = $status === 'late' ? (int) $workStart->diffInMinutes($checkInTime) : 0;
 
-        Attendance::updateOrCreate(
-            [
-                'employee_id' => $employee->id,
-                'date' => $today,
-                'school_id' => $this->selectedSchoolId,
-            ],
-            [
-                'check_in' => $checkInTime->format('H:i:s'),
-                'status' => $status,
-                'late_minutes' => $lateMinutes,
-                'recorded_by' => auth()->id(),
+        try {
+            Attendance::updateOrCreate(
+                [
+                    'employee_id' => $employee->id,
+                    'date' => $today,
+                    'school_id' => $this->selectedSchoolId,
+                ],
+                [
+                    'check_in' => $checkInTime->format('H:i:s'),
+                    'status' => $status,
+                    'late_minutes' => $lateMinutes,
+                    'recorded_by' => auth()->id(),
 
-                // GPS
-                'checkin_latitude' => $this->latitude,
-                'checkin_longitude' => $this->longitude,
-                'checkin_location_valid' => !$offsite,
-                'checkin_location_name' => $offsite ? 'Kegiatan Luar' : ($geo['location_name'] ?? '-'),
+                    // GPS
+                    'checkin_latitude' => $this->latitude,
+                    'checkin_longitude' => $this->longitude,
+                    'checkin_location_valid' => !$offsite,
+                    'checkin_location_name' => $offsite ? 'Kegiatan Luar' : ($geo['location_name'] ?? '-'),
 
-                // Off-site
-                'is_offsite' => $offsite,
-                'offsite_reason' => $offsite ? $this->offsiteReason : null,
-                'offsite_note' => $offsite ? ($this->offsiteNote ?: null) : null,
-                'offsite_status' => $offsite ? 'pending' : null,
-            ]
-        );
+                    // Off-site
+                    'is_offsite' => $offsite,
+                    'offsite_reason' => $offsite ? $this->offsiteReason : null,
+                    'offsite_note' => $offsite ? ($this->offsiteNote ?: null) : null,
+                    'offsite_status' => $offsite ? 'pending' : null,
+                ]
+            );
+        } catch (QueryException $e) {
+            // Race condition: dua klik check-in nyaris bersamaan lolos
+            // pengecekan "$existing" di checkIn() karena belum tersimpan
+            // saat keduanya dicek. Constraint unique(employee_id, date,
+            // school_id) di database menolak salah satunya -- tangkap di
+            // sini supaya user dapat pesan jelas, bukan error mentah.
+            session()->flash('error', 'Kamu sudah check-in untuk sekolah ini hari ini.');
+            return;
+        }
 
         if ($offsite) {
             session()->flash(

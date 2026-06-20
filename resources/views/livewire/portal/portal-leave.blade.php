@@ -1,5 +1,24 @@
 <div class="p-4 space-y-4">
 
+    {{-- ── FLASH MESSAGE ─────────────────────────────────────────────────── --}}
+    {{-- Sebelumnya TIDAK ADA blok ini sama sekali -- session()->flash()
+         yang dipanggil di PortalLeave.php (sukses kirim cuti, atau error
+         seperti "masih ada pengajuan pending") tersimpan di session tapi
+         tidak pernah dirender ke mana pun. Akibatnya tombol "Kirim" balik
+         ke normal tanpa pesan apa pun saat validasi gagal, terlihat
+         seperti tidak terjadi apa-apa. Pola ini disamakan dengan
+         portal-attendance.blade.php yang sudah benar. --}}
+    @if (session('success'))
+        <div class="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            {{ session('error') }}
+        </div>
+    @endif
+
     {{-- ════════════════════════════════════════════════════════
          APPROVAL KEPALA SEKOLAH (tahap 1, hanya tampil untuk role
          kepala_sekolah, scoped ke sekolahnya sendiri)
@@ -225,17 +244,21 @@
                     <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Selesai
                         *</label>
                     <input wire:model.live="end_date" type="date" min="{{ $start_date }}"
-                        max="{{ $maxEndDate }}"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 @error('end_date') border-red-400 @enderror">
+                        max="{{ $maxEndDate }}" @if ($isAutoFullBalance) readonly @endif
+                        class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 @error('end_date') border-red-400 @enderror
+                              @if ($isAutoFullBalance) bg-gray-50 text-gray-500 @endif">
                     @error('end_date')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
+                    @if ($isAutoFullBalance)
+                        <p class="text-[11px] text-violet-500 mt-1">🔒 Otomatis penuh sesuai sisa saldo</p>
+                    @endif
                 </div>
             </div>
 
             @if ($calculatedDays > 0)
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700 text-center">
-                    <strong>{{ $calculatedDays }} hari kerja</strong> (Senin–Jumat)
+                    <strong>{{ $calculatedDays }} hari kerja</strong> (Senin–Sabtu)
                 </div>
             @endif
 

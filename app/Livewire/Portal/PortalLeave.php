@@ -25,6 +25,11 @@ class PortalLeave extends Component
     public string $maxEndDate = '';
     public ?array $selectedBalance = null;
 
+    // Haji/Umroh: tanggal selesai otomatis penuh sesuai sisa saldo,
+    // field dikunci (readonly) di view saat true. Lihat
+    // LeaveService::isAutoFullBalanceType().
+    public bool $isAutoFullBalance = false;
+
     // Approval Kepala Sekolah (tahap 1, untuk guru/non_guru di
     // sekolahnya sendiri). Section ini hanya tampil jika user login
     // punya role kepala_sekolah, lihat isKepalaSekolah di render().
@@ -58,6 +63,9 @@ class PortalLeave extends Component
             ? ['quota' => $balance->quota, 'used' => $balance->used, 'remaining' => $balance->remaining]
             : null;
 
+        $leaveType = LeaveType::find($this->leave_type_id);
+        $this->isAutoFullBalance = $leaveType && LeaveService::isAutoFullBalanceType($leaveType);
+
         $this->updateMaxEndDate();
     }
 
@@ -89,7 +97,13 @@ class PortalLeave extends Component
         $lt = LeaveType::find($this->leave_type_id);
         $quota = $this->selectedBalance ? $this->selectedBalance['remaining'] : ($lt?->quota ?? 1);
         $this->maxEndDate = LeaveService::calcMaxEndDate($this->start_date, $quota);
-        if ($this->end_date && $this->end_date > $this->maxEndDate) {
+
+        // Haji/Umroh: tanggal selesai SELALU otomatis penuh sesuai
+        // sisa saldo, tidak menunggu pegawai pilih manual. Field-nya
+        // dikunci readonly di view saat isAutoFullBalance true.
+        if ($this->isAutoFullBalance) {
+            $this->end_date = $this->maxEndDate;
+        } elseif ($this->end_date && $this->end_date > $this->maxEndDate) {
             $this->end_date = $this->maxEndDate;
         }
         $this->recalcDays();
@@ -119,8 +133,29 @@ class PortalLeave extends Component
             return;
         }
 
+        // Haji/Umroh: paksa end_date = maxEndDate di backend juga,
+        // JANGAN percaya nilai dari request meski field-nya readonly
+        // di UI -- readonly HTML tidak 100% mencegah manipulasi date-
+        // picker native di semua browser.
+        if ($leaveType && LeaveService::isAutoFullBalanceType($leaveType)) {
+            $this->end_date = $this->maxEndDate;
+        }
+
         $errors = LeaveService::validate($employee, $leaveType, $this->start_date, $this->end_date, $this->selectedBalance);
         if (!empty($errors)) {
+            // Key 'general' = error yang tidak terikat field tertentu
+            // di form ini (mis. masih ada pengajuan pending, atau
+            // pegawai masih probation) -- ditampilkan sebagai flash
+            // message, BUKAN addError(), karena tidak ada elemen form
+            // bernama 'general' untuk merendernya. Sebelumnya pakai key
+            // 'selectedEmployeeId' (nama field di LeaveIndex/Dashboard,
+            // tidak ada di Portal) sehingga error "ada" tapi tidak
+            // pernah terlihat di Portal -- pengguna kira tidak terjadi
+            // apa-apa saat klik kirim. Lihat README Changelog 20 Juni 2026.
+            if (isset($errors['general'])) {
+                session()->flash('error', $errors['general']);
+                unset($errors['general']);
+            }
             foreach ($errors as $field => $msg) {
                 $this->addError($field, $msg);
             }
@@ -148,7 +183,7 @@ class PortalLeave extends Component
         ]);
 
         session()->flash('success', 'Pengajuan cuti berhasil dikirim.');
-        $this->reset(['showForm', 'leave_type_id', 'start_date', 'end_date', 'reason', 'document_file', 'calculatedDays', 'selectedBalance', 'maxEndDate']);
+        $this->reset(['showForm', 'leave_type_id', 'start_date', 'end_date', 'reason', 'document_file', 'calculatedDays', 'selectedBalance', 'maxEndDate', 'isAutoFullBalance']);
         $this->start_date = now()->addDays(LeaveService::MIN_DAYS_BEFORE)->format('Y-m-d');
         $this->end_date = $this->start_date;
     }

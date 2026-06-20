@@ -220,11 +220,14 @@ class PortalAttendance extends Component
                     'checkin_location_valid' => !$offsite,
                     'checkin_location_name' => $offsite ? 'Kegiatan Luar' : ($geo['location_name'] ?? '-'),
 
-                    // Off-site
+                    // Off-site: TIDAK ADA workflow approval (diputuskan
+                    // 20 Juni 2026) -- absensi offsite otomatis sah,
+                    // offsite_status cuma untuk LOG INFORMASI ke HR
+                    // (riwayat read-only), bukan gerbang keputusan.
                     'is_offsite' => $offsite,
                     'offsite_reason' => $offsite ? $this->offsiteReason : null,
                     'offsite_note' => $offsite ? ($this->offsiteNote ?: null) : null,
-                    'offsite_status' => $offsite ? 'pending' : null,
+                    'offsite_status' => $offsite ? 'approved' : null,
                 ]
             );
         } catch (QueryException $e) {
@@ -241,7 +244,7 @@ class PortalAttendance extends Component
             session()->flash(
                 'success',
                 "Check-in berhasil pukul {$checkInTime->format('H:i')}. "
-                . "⏳ Kegiatan luar menunggu persetujuan HR."
+                . "📋 Kegiatan luar tercatat."
             );
         } else {
             session()->flash(
@@ -274,17 +277,19 @@ class PortalAttendance extends Component
             'checkout_location_name' => $offsite ? 'Kegiatan Luar' : ($geo['location_name'] ?? '-'),
 
             // Off-site (hanya update jika check-out yang off-site, bukan check-in)
+            // TIDAK ADA workflow approval -- otomatis sah, lihat catatan
+            // di doCheckIn(). 'approved' bukan 'pending'.
             'is_offsite' => $attendance->is_offsite || $offsite,
             'offsite_reason' => $attendance->offsite_reason ?? ($offsite ? $this->offsiteReason : null),
             'offsite_note' => $attendance->offsite_note ?? ($offsite ? ($this->offsiteNote ?: null) : null),
-            'offsite_status' => ($attendance->is_offsite || $offsite) ? ($attendance->offsite_status ?? 'pending') : null,
+            'offsite_status' => ($attendance->is_offsite || $offsite) ? ($attendance->offsite_status ?? 'approved') : null,
         ]);
 
         if ($offsite) {
             session()->flash(
                 'success',
                 "Check-out berhasil pukul {$checkOutTime->format('H:i')}. "
-                . "⏳ Kegiatan luar menunggu persetujuan HR."
+                . "📋 Kegiatan luar tercatat."
             );
         } else {
             session()->flash(

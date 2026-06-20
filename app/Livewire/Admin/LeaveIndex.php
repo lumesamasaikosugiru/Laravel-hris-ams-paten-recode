@@ -168,6 +168,14 @@ class LeaveIndex extends Component
         );
 
         if (!empty($errors)) {
+            // Key 'general' dari LeaveService dipetakan ke
+            // selectedEmployeeId di sini -- field itu memang ada di
+            // form Dashboard ini (combobox pilih pegawai), beda dari
+            // Portal yang tidak punya field tersebut.
+            if (isset($errors['general'])) {
+                $errors['selectedEmployeeId'] = $errors['general'];
+                unset($errors['general']);
+            }
             foreach ($errors as $field => $message) {
                 $this->addError($field, $message);
             }

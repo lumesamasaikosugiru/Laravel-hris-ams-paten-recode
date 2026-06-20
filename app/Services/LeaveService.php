@@ -22,6 +22,16 @@ class LeaveService
     const EXCLUDED_FOR_GURU = ['cuti tahunan'];
 
     /**
+     * Jenis cuti yang tanggal selesainya WAJIB otomatis terisi penuh
+     * sesuai sisa saldo, TIDAK BISA dipilih manual oleh pegawai --
+     * khusus Haji & Umroh (by nama, bukan berdasarkan cycle='once',
+     * supaya jenis cuti 'sekali pakai' lain di masa depan tidak ikut
+     * otomatis terkena aturan ini kecuali ditambahkan eksplisit di
+     * sini).
+     */
+    const AUTO_FULL_BALANCE_LEAVE_TYPES = ['haji', 'umroh'];
+
+    /**
      * Role yang pengajuan cutinya WAJIB lewat approval Kepala Sekolah
      * dulu (tahap 1) sebelum bisa diproses Admin SDM/Ketua (tahap 2).
      * Role lain di luar daftar ini tetap approval 1 tahap seperti biasa.
@@ -44,7 +54,7 @@ class LeaveService
         $errors = [];
         // 0. Pegawai probation tidak boleh mengajukan cuti
         if ($employee->status === 'probation') {
-            $errors['selectedEmployeeId'] =
+            $errors['general'] =
                 'Pegawai dalam masa percobaan tidak dapat mengajukan cuti.';
             return $errors; // langsung return, tidak perlu cek yang lain
         }
@@ -95,7 +105,7 @@ class LeaveService
             ->where('status', 'pending')
             ->exists();
         if ($hasPending) {
-            $errors['selectedEmployeeId'] =
+            $errors['general'] =
                 "Pegawai ini masih memiliki pengajuan cuti yang belum diproses.";
         }
 
@@ -168,5 +178,16 @@ class LeaveService
             return false;
         }
         return $employee->user?->hasAnyRole(self::ROLES_REQUIRE_SCHOOL_APPROVAL) ?? false;
+    }
+
+    /**
+     * Apakah $leaveType termasuk Haji/Umroh -- tanggal selesainya
+     * WAJIB otomatis penuh sesuai sisa saldo, field tanggal selesai
+     * di form HARUS dikunci (readonly), tidak bisa dipilih manual.
+     * Lihat AUTO_FULL_BALANCE_LEAVE_TYPES untuk daftarnya.
+     */
+    public static function isAutoFullBalanceType(LeaveType $leaveType): bool
+    {
+        return in_array(strtolower($leaveType->name), self::AUTO_FULL_BALANCE_LEAVE_TYPES, true);
     }
 }

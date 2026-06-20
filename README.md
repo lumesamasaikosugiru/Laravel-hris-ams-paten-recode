@@ -150,6 +150,8 @@ Diisi via `UserSeeder.php`. Semua akun di bawah dibuat otomatis saat `php artisa
 - Pengajuan cuti mandiri via Portal Mobile
 - Approval flow: Pending → Disetujui/Ditolak (permission `leave.approve`, dipegang `admin_sdm` & `ketua`)
 - **Approval 2 tahap untuk guru & non-guru sekolah** — Kepala Sekolah (tahap 1) → Admin SDM/Ketua (tahap 2). Lihat bagian **Approval Cuti 2 Tahap** di bawah.
+- **Hari kerja: Senin–Sabtu** (bukan Senin-Jumat). Sumber kebenaran tunggal: `LeaveRequest::WORK_DAYS` + `LeaveRequest::isWorkDay()` — dipanggil oleh `countWorkDays()`, `LeaveService::calcMaxEndDate()`, pembuatan baris attendance `'leave'` saat cuti disetujui, dan tampilan "Hari Libur" di Portal absensi. **Jangan** pakai `Carbon::isWeekday()/isWeekend()` bawaan untuk keputusan terkait cuti/absensi — hardcode Senin-Jumat, tidak ikut WORK_DAYS.
+- **Haji & Umroh: tanggal selesai otomatis penuh** sesuai sisa saldo, field dikunci (readonly) — tidak bisa dipilih manual. By nama spesifik (`LeaveService::AUTO_FULL_BALANCE_LEAVE_TYPES`), bukan berdasarkan `cycle='once'`.
 
 ### ✅ Phase 6 — Dashboard & Laporan
 
@@ -171,10 +173,10 @@ Diisi via `UserSeeder.php`. Semua akun di bawah dibuat otomatis saat `php artisa
 - Lintang/bujur, status valid, dan nama lokasi tersimpan terpisah untuk check-in dan check-out
 - Sedang tahap testing di server online khusus GPS (mihow.my.id) — **bukan untuk pemakaian operasional harian dulu**
 
-### ✅ Phase 11.2 — Offsite Approval (Kegiatan Luar Lokasi)
+### ✅ Phase 11.2 — Kegiatan Luar Lokasi (Offsite) — Read-Only
 
 - Pegawai yang absen di luar radius dapat mengajukan alasan kegiatan luar lokasi (6 pilihan alasan + catatan bebas)
-- Status pengajuan (pending/approved/rejected) diproses HR via `OffsiteApproval.php`
+- **Diubah 20 Juni 2026:** TIDAK ADA LAGI workflow approve/reject. Absensi offsite otomatis sah (`offsite_status` selalu `approved`), HR hanya butuh visibilitas. Halaman `/admin/offsite-approvals` sekarang read-only — daftar informasi (siapa, kapan, alasan, lokasi via link Maps), tanpa tombol aksi.
 
 ### ✅ RBAC Granular per Fitur
 
@@ -274,20 +276,24 @@ Format: `YY` + `PP` + `KK` + `NNNN`
 
 ## Aturan Bisnis Fatahillah
 
-| Aturan                            | Nilai                                                     | Lokasi Konfigurasi                            |
-| --------------------------------- | --------------------------------------------------------- | --------------------------------------------- |
-| Usia pensiun                      | 60 tahun                                                  | `Employee::RETIREMENT_AGE`                    |
-| Jam masuk standar                 | 07:30 WIB                                                 | `Attendance::WORK_START`                      |
-| Jam selesai kerja                 | 16:00 WIB                                                 | `Attendance::WORK_END`                        |
-| Radius valid lokasi absensi (GPS) | 100 meter (⚠️ cek `.env` lokal, lihat catatan Phase 11.1) | `config/geofence.php`                         |
-| Minimal pengajuan cuti            | H-5                                                       | `LeaveService::MIN_DAYS_BEFORE`               |
-| Cuti yang tidak boleh untuk guru  | Cuti Tahunan                                              | `LeaveService::EXCLUDED_FOR_GURU`             |
-| Masa percobaan non-guru           | 3 bulan                                                   | `NipyGenerator`                               |
-| Masa percobaan guru               | 6 bulan                                                   | `NipyGenerator`                               |
-| Pegawai probation dapat cuti      | ❌ Tidak                                                  | `LeaveService::validate()`                    |
-| Maksimal tugas tambahan aktif     | 1 per pegawai                                             | `AdditionalAssignment.php`                    |
-| Tugas tambahan lintas unit        | Wajib beda dari unit induk                                | `AdditionalAssignment::saveAdditional()`      |
-| Akun dinonaktifkan                | Auto-logout langsung, tidak perlu tunggu sesi habis       | `CheckUserActive` middleware (`check.active`) |
+| Aturan                             | Nilai                                                                                | Lokasi Konfigurasi                            |
+| ---------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------- |
+| Usia pensiun                       | 60 tahun                                                                             | `Employee::RETIREMENT_AGE`                    |
+| Jam masuk standar                  | 07:00 WIB                                                                            | `Attendance::WORK_START`                      |
+| Jam selesai kerja                  | 15:00 WIB                                                                            | `Attendance::WORK_END`                        |
+| Hari kerja                         | Senin–Sabtu                                                                          | `LeaveRequest::WORK_DAYS`                     |
+| Radius valid lokasi absensi (GPS)  | 100 meter (⚠️ cek `.env` lokal, lihat catatan Phase 11.1)                            | `config/geofence.php`                         |
+| Minimal pengajuan cuti             | H-5                                                                                  | `LeaveService::MIN_DAYS_BEFORE`               |
+| Cuti yang tidak boleh untuk guru   | Cuti Tahunan                                                                         | `LeaveService::EXCLUDED_FOR_GURU`             |
+| Tanggal selesai Haji/Umroh         | Otomatis penuh sesuai sisa saldo, tidak bisa diubah manual                           | `LeaveService::AUTO_FULL_BALANCE_LEAVE_TYPES` |
+| Masa percobaan non-guru            | 3 bulan                                                                              | `NipyGenerator`                               |
+| Masa percobaan guru                | 6 bulan                                                                              | `NipyGenerator`                               |
+| Pegawai probation dapat cuti       | ❌ Tidak                                                                             | `LeaveService::validate()`                    |
+| Maksimal tugas tambahan aktif      | 1 per pegawai                                                                        | `AdditionalAssignment.php`                    |
+| Tugas tambahan lintas unit         | Wajib beda dari unit induk                                                           | `AdditionalAssignment::saveAdditional()`      |
+| Cuti pegawai dengan tugas tambahan | Hanya berlaku di sekolah INDUK, tidak mempengaruhi absensi di sekolah tugas tambahan | `LeaveIndex::processLeave()`                  |
+| Kegiatan luar lokasi (offsite)     | Otomatis sah, tanpa approval — HR hanya lihat informasi                              | `OffsiteApproval.php` (read-only)             |
+| Akun dinonaktifkan                 | Auto-logout langsung, tidak perlu tunggu sesi habis                                  | `CheckUserActive` middleware (`check.active`) |
 
 ---
 
@@ -437,11 +443,10 @@ Implementasi: kolom baru di `leave_requests` (`requires_school_approval`, `schoo
 
 Daftar lebih detail ada di Bab 12 Dokumen Master. Ringkasan yang paling relevan untuk kerja harian:
 
-- ⚠️ **Radius geofencing belum final secara bisnis** — sudah berubah beberapa kali (200m → 100m), PRD lama pernah menyebut 500m. Cek `.env` / `config/geofence.php` sebelum anggap nilai ini stabil.
-- ⚠️ **Defense-in-depth (`abort_unless`) baru ada di sebagian komponen Livewire Admin** — `EmployeeForm`, `EmployeeDetail`, `EmployeeImport`, dan (sejak 19 Juni 2026) `LeaveIndex::openApproveModal()`/`processLeave()`. Komponen lain (`OffsiteApproval`, `UserManagement`, dst) masih hanya dilindungi Blade `@can` + middleware route.
-- ⚠️ **Rantai approval cuti per-role belum diimplementasikan** — siapa pun dengan permission `leave.approve` (`admin_sdm`, `ketua`) bisa approve pengajuan siapa saja, tanpa validasi "approver yang seharusnya" sesuai jabatan pengaju.
-- ⚠️ **Constraint unique `attendances` cuma `(employee_id, date)`**, tidak menyertakan `school_id` — berisiko error saat pegawai dengan tugas tambahan absen di dua sekolah berbeda pada tanggal yang sama. Belum diuji skenario nyatanya.
-- ⚠️ Dua lokasi di `config/geofence.php` (`SMK YP. Fatahillah 1 Cilegon Kampus 1` dan `SMK YP. Fatahillah 2 Cilegon`) punya koordinat identik — perlu dicek apakah disengaja.
+- ⚠️ **Defense-in-depth (`abort_unless`) belum merata di semua komponen Livewire Admin** — `EmployeeForm`, `EmployeeDetail`, `EmployeeImport`, `LeaveIndex` (approve/reject) sudah punya. Komponen lain (`UserManagement`, master data, dst) masih hanya dilindungi Blade `@can` + middleware route.
+- ⚠️ **Rantai approval cuti per-role (non-sekolah) belum diimplementasikan** — siapa pun dengan permission `leave.approve` (`admin_sdm`, `ketua`) bisa approve pengajuan siapa saja, tanpa validasi "approver yang seharusnya" sesuai jabatan pengaju. (Khusus guru/non-guru sekolah, ini SUDAH ada lewat approval 2 tahap Kepsek→SDM.)
+- ⚠️ Dua lokasi di `config/geofence.php` (`SMK YP. Fatahillah 1 Cilegon Kampus 1` dan `SMK YP. Fatahillah 2 Cilegon`) punya koordinat identik — **dikonfirmasi disengaja** (satu gedung, dua unit administratif).
+- ⚠️ Belum ada test Pest untuk skenario `is_active`, approval 2 tahap, atau constraint attendance.
 
 ---
 
@@ -517,6 +522,24 @@ php artisan hris:check-probation               # Manual cek masa percobaan
 ---
 
 ## Changelog
+
+### 20 Juni 2026
+
+**Bug ditemukan lewat testing manual (guru dengan tugas tambahan):**
+
+- **Fix kritis:** `Attendance::$fillable` TIDAK PUNYA kolom GPS & offsite sama sekali (`checkin_latitude`, `is_offsite`, `offsite_status`, dst) sejak fitur-fitur itu pertama dibuat. Eloquent menolak mass-assignment ke kolom luar `$fillable` secara DIAM-DIAM (tidak error) — akibatnya data GPS/offsite SELALU tersimpan null/false walau UI Portal bilang "berhasil". Ini sebabnya kegiatan luar lokasi tidak pernah muncul di Dashboard admin. Semua kolom relevan sudah ditambahkan ke `$fillable` + `$casts`.
+- **Perubahan kebijakan:** Workflow approve/reject kegiatan luar lokasi (offsite) **dihapus sepenuhnya**. Absensi offsite sekarang otomatis sah (`offsite_status` selalu `'approved'`), HR hanya butuh visibilitas bukan keputusan. `OffsiteApproval.php` & `offsite-approval.blade.php` ditulis ulang jadi read-only (tanpa tombol aksi, tanpa filter status, tanpa modal tolak).
+- **Fix bug relasi:** `Attendance` model tidak punya relasi `offsiteApprovedBy()` sama sekali, padahal `OffsiteApproval.php` memanggil nama relasi yang salah (`approvedBy`, harusnya beda). Sudah diperbaiki (meski sekarang tidak lagi krusial karena workflow approval dihapus).
+- **Fix bug:** Ajukan cuti kedua saat masih ada yang pending — tombol "Kirim" berubah "Mengirim" lalu balik normal TANPA pesan apa pun, terlihat seperti tidak terjadi apa-apa. Akar masalah ganda: (1) `LeaveService::validate()` mengirim error dengan key `selectedEmployeeId` (field yang hanya ada di Dashboard/`LeaveIndex`), sehingga di Portal error itu "ada" tapi tidak pernah ter-render; (2) `portal-leave.blade.php` TIDAK PUNYA blok flash message sama sekali sejak awal dibuat. Key error general sekarang dipetakan ke `general` lalu ditampilkan sebagai flash message di kedua komponen (Dashboard tetap dipetakan ke `selectedEmployeeId` karena field itu memang ada di sana).
+- **Fitur baru:** Tanggal selesai cuti Haji & Umroh sekarang otomatis terisi penuh sesuai sisa saldo, field dikunci (readonly) — tidak bisa dipilih manual. Dikunci di backend juga (bukan cuma HTML `readonly`) supaya tidak bisa dimanipulasi lewat date-picker native browser. By nama spesifik (`LeaveService::AUTO_FULL_BALANCE_LEAVE_TYPES`), TIDAK berdasarkan `cycle='once'` agar jenis cuti sekali-pakai lain di masa depan tidak otomatis ikut aturan ini.
+- **Fix teks:** Label "33 hari kerja (Senin–Jumat)" di form pengajuan cuti (Dashboard & Portal) diperbaiki jadi "Senin–Sabtu" — sebelumnya cuma teks statis yang lupa diupdate saat hari kerja diubah.
+
+### 19 Juni 2026 (lanjutan #3 — jam & hari kerja, fix migration)
+
+- **Jam kerja diubah:** 07:30–16:00 → **07:00–15:00 WIB**. Satu tempat: `Attendance::WORK_START`/`WORK_END`, sudah otomatis konsisten di Dashboard & Portal (Portal memanggil konstanta yang sama, tidak ada nilai terpisah).
+- **Hari kerja diubah:** Senin-Jumat → **Senin-Sabtu**. Sebelumnya logic ini DITULIS ULANG MANUAL di 4 tempat terpisah (`LeaveRequest::countWorkDays()`, `LeaveService::calcMaxEndDate()`, `LeaveIndex::processLeave()`, `PortalAttendance` tampilan "hari libur") pakai `Carbon::isWeekday()/isWeekend()` bawaan yang hardcode Senin-Jumat. Dikonsolidasi jadi SATU sumber kebenaran: `LeaveRequest::WORK_DAYS` + `LeaveRequest::isWorkDay()` — 3 tempat lain sekarang memanggil method itu.
+- **Fix migration gagal (error MySQL 1553):** Migration fix unique constraint attendance (lihat 19 Juni #2) sempat gagal dengan "Cannot drop index ... needed in a foreign key constraint" — MySQL InnoDB mewajibkan foreign key `employee_id` selalu punya index pendukung. Diperbaiki dengan membalik urutan: buat unique BARU dulu, baru drop yang LAMA (sebelumnya kebalik).
+- **Fix potensi konflik unique constraint baru:** `LeaveIndex::processLeave()` (pembuatan baris attendance `'leave'` saat cuti disetujui) sebelumnya tidak menyertakan `school_id` di key pencarian `updateOrCreate()` — berisiko salah update baris attendance milik sekolah lain untuk pegawai dengan tugas tambahan. Diperbaiki: key pencarian sekarang selalu sertakan `school_id` (sekolah INDUK), sesuai keputusan bahwa cuti hanya berlaku di unit induk, tidak mempengaruhi sekolah tugas tambahan.
 
 ### 19 Juni 2026 (lanjutan #2 — fix permission approve & riwayat Kepsek)
 

@@ -4,6 +4,7 @@ namespace App\Livewire\Portal;
 
 use App\Models\Attendance;
 use App\Models\Employee;
+use App\Models\LeaveRequest;
 use App\Services\GeofenceService;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -333,7 +334,10 @@ class PortalAttendance extends Component
         return view(
             'livewire.portal.portal-attendance',
             compact('employee', 'todayAttendance', 'history', 'schools')
-            + ['isWeekend' => now()->isWeekend()]
+            // isHoliday, BUKAN isWeekend bawaan Carbon -- supaya ikut
+            // WORK_DAYS terpusat di LeaveRequest, bukan hardcode Sabtu-
+            // Minggu. Lihat LeaveRequest::isWorkDay() untuk definisinya.
+            + ['isHoliday' => !LeaveRequest::isWorkDay(now())]
         );
     }
 

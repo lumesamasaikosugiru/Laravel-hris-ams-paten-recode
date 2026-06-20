@@ -22,16 +22,31 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('attendances', function (Blueprint $table) {
-            $table->dropUnique(['employee_id', 'date']);
+            // PENTING: buat unique BARU dulu, baru drop yang LAMA.
+            // Urutan terbalik (drop dulu) akan gagal dengan error MySQL
+            // 1553 ("Cannot drop index ... needed in a foreign key
+            // constraint") -- karena index unique(employee_id, date)
+            // yang lama sedang dipakai MySQL sebagai index pendukung
+            // foreign key employee_id. MySQL InnoDB mewajibkan SETIAP
+            // foreign key punya minimal satu index yang valid di setiap
+            // saat, jadi index pengganti harus ada DULU sebelum index
+            // lama boleh dihapus.
             $table->unique(['employee_id', 'date', 'school_id'], 'attendances_employee_date_school_unique');
+        });
+
+        Schema::table('attendances', function (Blueprint $table) {
+            $table->dropUnique(['employee_id', 'date']);
         });
     }
 
     public function down(): void
     {
         Schema::table('attendances', function (Blueprint $table) {
-            $table->dropUnique('attendances_employee_date_school_unique');
             $table->unique(['employee_id', 'date']);
+        });
+
+        Schema::table('attendances', function (Blueprint $table) {
+            $table->dropUnique('attendances_employee_date_school_unique');
         });
     }
 };

@@ -124,7 +124,7 @@ class LeaveService
         $current = Carbon::parse($startDate);
         $days = 0;
         while ($days < $quota) {
-            if ($current->isWeekday())
+            if (LeaveRequest::isWorkDay($current))
                 $days++;
             if ($days < $quota)
                 $current->addDay();

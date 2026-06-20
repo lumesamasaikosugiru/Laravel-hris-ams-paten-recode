@@ -21,7 +21,11 @@ class Attendance extends Model
 
     protected $casts = ['date' => 'date'];
 
-    // Jam masuk standar (bisa dikonfigurasi nanti)
+    // Jam kerja standar Yayasan Fatahillah.
+    // Diubah dari 07:30-16:00 menjadi 07:00-15:00 per 19 Juni 2026.
+    // Hari kerja terkait (Senin-Sabtu) diatur terpisah di
+    // LeaveRequest::WORK_DAYS, bukan di sini -- konstanta ini HANYA
+    // untuk jam masuk/selesai dalam satu hari kerja.
     const WORK_START = '07:00';
     const WORK_END = '15:00';
 

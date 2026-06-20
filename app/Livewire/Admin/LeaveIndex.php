@@ -256,16 +256,28 @@ class LeaveIndex extends Component
                     $balance->increment('used', $request->days);
                 }
 
-                // Update attendance records
+                // Update attendance records -- HANYA untuk sekolah induk
+                // (employee->school_id), bukan sekolah tugas tambahan,
+                // sesuai aturan bisnis: cuti diajukan & berlaku di unit
+                // induk saja. Key pencarian WAJIB menyertakan school_id
+                // supaya cocok dengan unique constraint (employee_id,
+                // date, school_id) -- tanpa ini, updateOrCreate bisa
+                // salah meng-update baris attendance milik sekolah lain
+                // jika pegawai ini punya tugas tambahan dan sudah punya
+                // baris attendance di sekolah tersebut pada tanggal yang
+                // sama (lihat README Changelog 19 Juni 2026).
                 $start = $request->start_date->copy();
                 $end = $request->end_date->copy();
                 $current = $start->copy();
                 while ($current->lte($end)) {
-                    if ($current->isWeekday()) {
+                    if (LeaveRequest::isWorkDay($current)) {
                         Attendance::updateOrCreate(
-                            ['employee_id' => $request->employee_id, 'date' => $current->format('Y-m-d')],
                             [
+                                'employee_id' => $request->employee_id,
+                                'date' => $current->format('Y-m-d'),
                                 'school_id' => $request->employee->school_id,
+                            ],
+                            [
                                 'status' => 'leave',
                                 'check_in' => null,
                                 'check_out' => null,

@@ -70,11 +70,11 @@
             {{ now()->translatedFormat('l, d F Y') }}
         </p>
 
-        @if ($isWeekend)
+        @if ($isHoliday)
             <div class="text-center py-6">
                 <p class="text-4xl mb-2">🏖️</p>
                 <p class="font-semibold text-gray-600">Hari Libur</p>
-                <p class="text-sm text-gray-400 mt-1">Absensi hanya Senin – Jumat</p>
+                <p class="text-sm text-gray-400 mt-1">Absensi hanya Senin – Sabtu</p>
             </div>
         @elseif ($todayAttendance)
             <div class="space-y-3">

@@ -54,6 +54,29 @@ class LeaveRequest extends Model
     }
 
     /**
+     * Hari kerja Yayasan Fatahillah: Senin(1) s/d Sabtu(6). Minggu(0)
+     * libur. SUMBER KEBENARAN TUNGGAL untuk "apakah tanggal ini hari
+     * kerja" -- JANGAN pakai Carbon::isWeekday()/isWeekend() di tempat
+     * lain untuk keputusan terkait cuti/absensi, karena method bawaan
+     * itu hardcode Senin-Jumat dan tidak ikut berubah kalau WORK_DAYS
+     * di sini diubah.
+     *
+     * Dipakai oleh: countWorkDays() di bawah, LeaveService::
+     * calcMaxEndDate(), LeaveIndex::processLeave() (membuat baris
+     * attendance 'leave' saat cuti disetujui), dan PortalAttendance
+     * (tampilan "Hari Libur" di halaman absensi Portal). Riwayat:
+     * sebelumnya logic ini ditulis ulang manual di 4 tempat terpisah
+     * -- dikonsolidasi jadi satu sumber per 19 Juni 2026.
+     */
+    const WORK_DAYS = [1, 2, 3, 4, 5, 6]; // 0=Minggu, 1=Senin, ..., 6=Sabtu
+
+    public static function isWorkDay(Carbon|string $date): bool
+    {
+        $date = $date instanceof Carbon ? $date : Carbon::parse($date);
+        return in_array($date->dayOfWeek, self::WORK_DAYS, true);
+    }
+
+    /**
      * Apakah pengajuan ini sudah lolos tahap Kepala Sekolah dan SIAP
      * diproses oleh Admin SDM / Ketua. Untuk pengajuan yang tidak butuh
      * approval sekolah sama sekali (requires_school_approval=false),
@@ -97,7 +120,7 @@ class LeaveRequest extends Model
         };
     }
 
-    // Hitung hari kerja (Senin-Jumat) antara dua tanggal
+    // Hitung hari kerja (sesuai WORK_DAYS, lihat isWorkDay()) antara dua tanggal
     public static function countWorkDays(string $start, string $end): int
     {
         $start = Carbon::parse($start);
@@ -106,7 +129,7 @@ class LeaveRequest extends Model
         $current = $start->copy();
 
         while ($current->lte($end)) {
-            if ($current->isWeekday())
+            if (self::isWorkDay($current))
                 $days++;
             $current->addDay();
         }

@@ -223,7 +223,7 @@ class LeaveIndex extends Component
     {
         abort_unless(auth()->user()->can('leave.approve'), 403);
 
-        $request = LeaveRequest::with('employee')->findOrFail($this->processingId);
+        $request = LeaveRequest::with('employee.user.roles')->findOrFail($this->processingId);
 
         // Guard: pengajuan dari guru/non_guru WAJIB disetujui Kepala
         // Sekolah dulu sebelum bisa diproses SDM/Ketua di sini.
@@ -234,6 +234,24 @@ class LeaveIndex extends Component
                 $request->school_status === 'rejected'
                 ? 'Pengajuan ini sudah ditolak oleh Kepala Sekolah, tidak dapat diproses lebih lanjut.'
                 : 'Pengajuan ini masih menunggu persetujuan Kepala Sekolah terkait, belum bisa diproses di sini.'
+            );
+            return;
+        }
+
+        // Guard: rantai approval per-role pengaju. admin_sdm/ketua
+        // sama-sama punya permission leave.approve, tapi PRD menentukan
+        // siapa approver yang "benar" untuk role pengaju tertentu --
+        // lihat LeaveService::LEAVE_APPROVER_CHAIN. Hard block, bukan
+        // soft warning: approver yang salah TIDAK BISA approve sama
+        // sekali, harus diteruskan ke approver yang tepat. super_admin
+        // dikecualikan (override darurat).
+        if (!LeaveService::isCorrectApprover($request->employee, auth()->user())) {
+            $correctRole = LeaveService::getCorrectApproverRole($request->employee);
+            $this->showApproveModal = false;
+            session()->flash(
+                'error',
+                "Pengajuan cuti {$request->employee->name} seharusnya diproses oleh "
+                . ucwords(str_replace('_', ' ', $correctRole)) . ", bukan Anda."
             );
             return;
         }
@@ -316,6 +334,7 @@ class LeaveIndex extends Component
     // ── Generate saldo ────────────────────────────────────────
     public function generateBalances(): void
     {
+        abort_unless(auth()->user()->can('leave.balance'), 403);
         LeaveBalance::generateForYear($this->generateYear);
         session()->flash('success', "Saldo cuti tahun {$this->generateYear} berhasil di-generate.");
         $this->showGenerateModal = false;

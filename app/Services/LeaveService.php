@@ -38,6 +38,28 @@ class LeaveService
      */
     const ROLES_REQUIRE_SCHOOL_APPROVAL = ['guru', 'non_guru'];
 
+    /**
+     * Rantai approver yang BENAR (tahap final, permission leave.approve)
+     * berdasarkan role pengaju. super_admin SENGAJA tidak masuk peta
+     * ini -- dia override darurat, selalu boleh approve siapa saja
+     * tanpa terikat rantai (lihat isCorrectApprover()).
+     *
+     * guru/non_guru tetap masuk di sini untuk TAHAP 2 (setelah lolos
+     * approval Kepala Sekolah di tahap 1) -- approver tahap 2 mereka
+     * SAMA dengan staf_yayasan/kepala_bidang (admin_sdm), bukan
+     * approver terpisah.
+     */
+    const LEAVE_APPROVER_CHAIN = [
+        'staf_yayasan' => 'admin_sdm',
+        'kepala_bidang' => 'admin_sdm',
+        'staf_sdm' => 'admin_sdm',
+        'guru' => 'admin_sdm',
+        'non_guru' => 'admin_sdm',
+        'sekretaris' => 'ketua',
+        'bendahara' => 'ketua',
+        'admin_sdm' => 'ketua',
+    ];
+
     // ── Validasi ──────────────────────────────────────────────
 
     /**
@@ -178,6 +200,50 @@ class LeaveService
             return false;
         }
         return $employee->user?->hasAnyRole(self::ROLES_REQUIRE_SCHOOL_APPROVAL) ?? false;
+    }
+
+    /**
+     * Role approver yang BENAR untuk pengajuan cuti milik $employee
+     * ini, berdasarkan LEAVE_APPROVER_CHAIN. Null jika role pengaju
+     * tidak terdaftar di rantai (atau employee tidak punya akun User)
+     * -- artinya tidak ada aturan rantai yang berlaku, siapa pun yang
+     * punya leave.approve boleh proses (fallback aman, bukan blokir
+     * semua orang karena rantai belum lengkap).
+     */
+    public static function getCorrectApproverRole(Employee $employee): ?string
+    {
+        if (!$employee->user_id) {
+            return null;
+        }
+        $pengajuRoles = $employee->user?->roles->pluck('name') ?? collect();
+        foreach (self::LEAVE_APPROVER_CHAIN as $pengajuRole => $approverRole) {
+            if ($pengajuRoles->contains($pengajuRole)) {
+                return $approverRole;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Apakah $approver (User yang sedang mencoba approve) adalah
+     * approver yang BENAR untuk pengajuan cuti milik $employee.
+     *
+     * super_admin SELALU dianggap benar (override darurat, tidak
+     * terikat rantai). Kalau getCorrectApproverRole() mengembalikan
+     * null (role pengaju tidak ada di rantai), juga dianggap benar
+     * sebagai fallback aman -- daripada memblokir semua approval
+     * untuk kasus yang belum terdaftar di rantai.
+     */
+    public static function isCorrectApprover(Employee $employee, $approver): bool
+    {
+        if ($approver->hasRole('super_admin')) {
+            return true;
+        }
+        $correctRole = self::getCorrectApproverRole($employee);
+        if (!$correctRole) {
+            return true;
+        }
+        return $approver->hasRole($correctRole);
     }
 
     /**

@@ -148,7 +148,7 @@ Diisi via `UserSeeder.php`. Semua akun di bawah dibuat otomatis saat `php artisa
 - Generate saldo cuti otomatis per tahun — **hanya pegawai Aktif** (Probation tidak dapat saldo)
 - Pengajuan cuti dengan validasi aturan bisnis terpusat via `LeaveService`
 - Pengajuan cuti mandiri via Portal Mobile
-- Approval flow: Pending → Disetujui/Ditolak (permission `leave.approve`, dipegang `admin_sdm` & `ketua`)
+- **Approval flow:** Pending → Disetujui/Ditolak. Permission `leave.approve` dipegang `admin_sdm` & `ketua`, TAPI sejak 21 Juni 2026 ada **rantai approver per-role pengaju** (hard block) — lihat bagian **Rantai Approval Cuti** di bawah.
 - **Approval 2 tahap untuk guru & non-guru sekolah** — Kepala Sekolah (tahap 1) → Admin SDM/Ketua (tahap 2). Lihat bagian **Approval Cuti 2 Tahap** di bawah.
 - **Hari kerja: Senin–Sabtu** (bukan Senin-Jumat). Sumber kebenaran tunggal: `LeaveRequest::WORK_DAYS` + `LeaveRequest::isWorkDay()` — dipanggil oleh `countWorkDays()`, `LeaveService::calcMaxEndDate()`, pembuatan baris attendance `'leave'` saat cuti disetujui, dan tampilan "Hari Libur" di Portal absensi. **Jangan** pakai `Carbon::isWeekday()/isWeekend()` bawaan untuk keputusan terkait cuti/absensi — hardcode Senin-Jumat, tidak ikut WORK_DAYS.
 - **Haji & Umroh: tanggal selesai otomatis penuh** sesuai sisa saldo, field dikunci (readonly) — tidak bisa dipilih manual. By nama spesifik (`LeaveService::AUTO_FULL_BALANCE_LEAVE_TYPES`), bukan berdasarkan `cycle='once'`.
@@ -180,8 +180,8 @@ Diisi via `UserSeeder.php`. Semua akun di bawah dibuat otomatis saat `php artisa
 
 ### ✅ RBAC Granular per Fitur
 
-- 8 role, 34 permission, defense-in-depth (Blade `@can` + middleware route + `abort_unless` — **lapis ketiga ini baru diterapkan di modul Data Pegawai**, belum merata ke semua komponen, lihat bagian Known Issues)
-- 4 role dual-access (`staf_sdm`, `sekretaris`, `bendahara`, `ketua`) + **`admin_sdm`** (ditambahkan terbaru) bisa akses Portal **dan** Dashboard sekaligus
+- 8 role yayasan + 3 role sekolah (`guru`, `non_guru`, `kepala_sekolah`) = 11 total, 35 permission, defense-in-depth (Blade `@can` + middleware route + `abort_unless` — sejak 21 Juni 2026 ada di **16 dari 17** komponen Livewire Admin, lihat Known Issues untuk sisanya)
+- 4 role dual-access (`staf_sdm`, `sekretaris`, `bendahara`, `ketua`) + **`admin_sdm`** bisa akses Portal **dan** Dashboard sekaligus
 
 ### ✅ Fitur Nonaktifkan Akun (`is_active`)
 
@@ -276,24 +276,25 @@ Format: `YY` + `PP` + `KK` + `NNNN`
 
 ## Aturan Bisnis Fatahillah
 
-| Aturan                             | Nilai                                                                                | Lokasi Konfigurasi                            |
-| ---------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------- |
-| Usia pensiun                       | 60 tahun                                                                             | `Employee::RETIREMENT_AGE`                    |
-| Jam masuk standar                  | 07:00 WIB                                                                            | `Attendance::WORK_START`                      |
-| Jam selesai kerja                  | 15:00 WIB                                                                            | `Attendance::WORK_END`                        |
-| Hari kerja                         | Senin–Sabtu                                                                          | `LeaveRequest::WORK_DAYS`                     |
-| Radius valid lokasi absensi (GPS)  | 100 meter (⚠️ cek `.env` lokal, lihat catatan Phase 11.1)                            | `config/geofence.php`                         |
-| Minimal pengajuan cuti             | H-5                                                                                  | `LeaveService::MIN_DAYS_BEFORE`               |
-| Cuti yang tidak boleh untuk guru   | Cuti Tahunan                                                                         | `LeaveService::EXCLUDED_FOR_GURU`             |
-| Tanggal selesai Haji/Umroh         | Otomatis penuh sesuai sisa saldo, tidak bisa diubah manual                           | `LeaveService::AUTO_FULL_BALANCE_LEAVE_TYPES` |
-| Masa percobaan non-guru            | 3 bulan                                                                              | `NipyGenerator`                               |
-| Masa percobaan guru                | 6 bulan                                                                              | `NipyGenerator`                               |
-| Pegawai probation dapat cuti       | ❌ Tidak                                                                             | `LeaveService::validate()`                    |
-| Maksimal tugas tambahan aktif      | 1 per pegawai                                                                        | `AdditionalAssignment.php`                    |
-| Tugas tambahan lintas unit         | Wajib beda dari unit induk                                                           | `AdditionalAssignment::saveAdditional()`      |
-| Cuti pegawai dengan tugas tambahan | Hanya berlaku di sekolah INDUK, tidak mempengaruhi absensi di sekolah tugas tambahan | `LeaveIndex::processLeave()`                  |
-| Kegiatan luar lokasi (offsite)     | Otomatis sah, tanpa approval — HR hanya lihat informasi                              | `OffsiteApproval.php` (read-only)             |
-| Akun dinonaktifkan                 | Auto-logout langsung, tidak perlu tunggu sesi habis                                  | `CheckUserActive` middleware (`check.active`) |
+| Aturan                                        | Nilai                                                                                             | Lokasi Konfigurasi                            |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Usia pensiun                                  | 60 tahun                                                                                          | `Employee::RETIREMENT_AGE`                    |
+| Jam masuk standar                             | 07:00 WIB                                                                                         | `Attendance::WORK_START`                      |
+| Jam selesai kerja                             | 15:00 WIB                                                                                         | `Attendance::WORK_END`                        |
+| Hari kerja                                    | Senin–Sabtu                                                                                       | `LeaveRequest::WORK_DAYS`                     |
+| Radius valid lokasi absensi (GPS)             | 100 meter (⚠️ cek `.env` lokal, lihat catatan Phase 11.1)                                         | `config/geofence.php`                         |
+| Minimal pengajuan cuti                        | H-5                                                                                               | `LeaveService::MIN_DAYS_BEFORE`               |
+| Cuti yang tidak boleh untuk guru              | Cuti Tahunan                                                                                      | `LeaveService::EXCLUDED_FOR_GURU`             |
+| Tanggal selesai Haji/Umroh                    | Otomatis penuh sesuai sisa saldo, tidak bisa diubah manual                                        | `LeaveService::AUTO_FULL_BALANCE_LEAVE_TYPES` |
+| Masa percobaan non-guru                       | 3 bulan                                                                                           | `NipyGenerator`                               |
+| Masa percobaan guru                           | 6 bulan                                                                                           | `NipyGenerator`                               |
+| Pegawai probation dapat cuti                  | ❌ Tidak                                                                                          | `LeaveService::validate()`                    |
+| Maksimal tugas tambahan aktif                 | 1 per pegawai                                                                                     | `AdditionalAssignment.php`                    |
+| Tugas tambahan lintas unit                    | Wajib beda dari unit induk                                                                        | `AdditionalAssignment::saveAdditional()`      |
+| Cuti pegawai dengan tugas tambahan            | Hanya berlaku di sekolah INDUK, tidak mempengaruhi absensi di sekolah tugas tambahan              | `LeaveIndex::processLeave()`                  |
+| Approver cuti tahap final harus sesuai rantai | Hard block — `admin_sdm`/`ketua` tidak bisa approve sembarang pengaju, lihat Rantai Approval Cuti | `LeaveService::LEAVE_APPROVER_CHAIN`          |
+| Kegiatan luar lokasi (offsite)                | Otomatis sah, tanpa approval — HR hanya lihat informasi                                           | `OffsiteApproval.php` (read-only)             |
+| Akun dinonaktifkan                            | Auto-logout langsung, tidak perlu tunggu sesi habis                                               | `CheckUserActive` middleware (`check.active`) |
 
 ---
 
@@ -385,6 +386,20 @@ Akun Kepala Sekolah **wajib** terhubung ke `Employee` dengan posisi "Kepala Seko
 
 Implementasi: kolom baru di `leave_requests` (`requires_school_approval`, `school_status`, `school_approved_by`, `school_approved_at`, `school_rejection_note`) — kolom `status` utama **tidak diubah artinya**, tetap berarti "keputusan akhir" untuk semua role seperti sebelumnya.
 
+### Rantai Approval Cuti (Tahap Final, `leave.approve`)
+
+`admin_sdm` dan `ketua` sama-sama punya permission `leave.approve`, tapi sejak 21 Juni 2026 ada validasi **siapa approver yang benar** untuk role pengaju tertentu — **hard block**, bukan sekadar peringatan. Approver yang salah akan ditolak dengan pesan jelas, bukan diam-diam berhasil.
+
+| Role Pengaju                                                              | Approver yang Benar                                              |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `staf_yayasan`, `kepala_bidang`, `staf_sdm`, `guru`, `non_guru`           | `admin_sdm`                                                      |
+| `sekretaris`, `bendahara`, `admin_sdm` (mengajukan untuk dirinya sendiri) | `ketua`                                                          |
+| `kepala_sekolah`                                                          | Tidak diatur — fallback, `admin_sdm` ATAU `ketua` boleh keduanya |
+
+- `super_admin` **selalu** boleh approve siapa saja, di luar rantai (override darurat).
+- Untuk `guru`/`non_guru`: rantai ini berlaku di **tahap 2** (setelah lolos approval Kepala Sekolah di tahap 1) — approver tahap 2 mereka sama dengan `staf_yayasan`/`kepala_bidang` (`admin_sdm`), bukan approver terpisah.
+- Sumber kebenaran tunggal: `LeaveService::LEAVE_APPROVER_CHAIN` + `LeaveService::isCorrectApprover()`. Kalau role pengaju tidak terdaftar di rantai (seperti `kepala_sekolah`), validasi fallback ke "boleh diproses siapa saja yang punya `leave.approve`" — bukan blokir total.
+
 ---
 
 ## Routes Utama
@@ -443,10 +458,10 @@ Implementasi: kolom baru di `leave_requests` (`requires_school_approval`, `schoo
 
 Daftar lebih detail ada di Bab 12 Dokumen Master. Ringkasan yang paling relevan untuk kerja harian:
 
-- ⚠️ **Defense-in-depth (`abort_unless`) belum merata di semua komponen Livewire Admin** — `EmployeeForm`, `EmployeeDetail`, `EmployeeImport`, `LeaveIndex` (approve/reject) sudah punya. Komponen lain (`UserManagement`, master data, dst) masih hanya dilindungi Blade `@can` + middleware route.
-- ⚠️ **Rantai approval cuti per-role (non-sekolah) belum diimplementasikan** — siapa pun dengan permission `leave.approve` (`admin_sdm`, `ketua`) bisa approve pengajuan siapa saja, tanpa validasi "approver yang seharusnya" sesuai jabatan pengaju. (Khusus guru/non-guru sekolah, ini SUDAH ada lewat approval 2 tahap Kepsek→SDM.)
 - ⚠️ Dua lokasi di `config/geofence.php` (`SMK YP. Fatahillah 1 Cilegon Kampus 1` dan `SMK YP. Fatahillah 2 Cilegon`) punya koordinat identik — **dikonfirmasi disengaja** (satu gedung, dua unit administratif).
-- ⚠️ Belum ada test Pest untuk skenario `is_active`, approval 2 tahap, atau constraint attendance.
+- ⚠️ Belum ada test Pest untuk skenario `is_active`, approval 2 tahap, rantai approval per-role, atau constraint attendance.
+- ⚠️ `kepala_sekolah` tidak punya approver spesifik di rantai approval cuti (fallback: `admin_sdm`/`ketua` mana pun boleh) — keputusan sadar, bukan kelupaan.
+- ⚠️ Enum `last_education` di tabel `applicants` belum punya opsi `'smk'` (beda dengan `employees` yang punya) — belum diverifikasi bagaimana ini ditangani saat konversi pelamar→pegawai.
 
 ---
 
@@ -522,6 +537,12 @@ php artisan hris:check-probation               # Manual cek masa percobaan
 ---
 
 ## Changelog
+
+### 21 Juni 2026
+
+- **Defense-in-depth (`abort_unless`) diperluas ke 13 komponen Livewire Admin** yang sebelumnya hanya dilindungi Blade `@can` + middleware route: `SchoolIndex`, `DepartmentIndex`, `PositionIndex`, `SkillIndex`, `LeaveTypeIndex` (`master.view/create/edit/delete`), `UserManagement` (`user.manage`, di SETIAP method — paling ketat), `AttendanceIndex` (`attendance.view/create/edit`), `AttendanceReport` (`attendance.report`/`export`), `LeaveBalance` (`leave.balance`), `ApplicantIndex` (`recruitment.view/edit/convert`), `JobIndex` (`recruitment.view/create/edit/delete`), `EmployeeIndex` (`employee.view`), `AdditionalAssignment` (`employee.view/edit`). Total sekarang 16 dari 17 komponen Admin punya lapis 3 (`OffsiteApproval` sengaja tidak, karena sudah read-only tanpa aksi apa pun).
+- **Fix bug serupa di `AttendanceIndex::saveManual()`** — key pencarian `updateOrCreate()` tidak menyertakan `school_id`, sama seperti bug yang diperbaiki di `LeaveIndex::processLeave()` (19 Juni). Diperbaiki dengan pola yang sama: key selalu sertakan `school_id` (sekolah induk pegawai), form input manual SDM sengaja tidak ditambah pilihan sekolah.
+- **Rantai approval cuti per-role pengaju** (hard block) — lihat bagian **Rantai Approval Cuti** di atas. `LeaveService::LEAVE_APPROVER_CHAIN` + `isCorrectApprover()`/`getCorrectApproverRole()` sebagai sumber kebenaran tunggal. `LeaveIndex::processLeave()` menolak approver yang salah dengan pesan jelas, bukan diam-diam berhasil.
 
 ### 20 Juni 2026
 

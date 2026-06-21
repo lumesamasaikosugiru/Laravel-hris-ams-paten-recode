@@ -78,6 +78,11 @@ class JobIndex extends Component
         $this->resetPage();
     }
 
+    public function mount(): void
+    {
+        abort_unless(auth()->user()->can('recruitment.view'), 403);
+    }
+
     public function updatedSchoolId($value): void
     {
         $this->department_id = '';
@@ -143,6 +148,10 @@ class JobIndex extends Component
 
     public function save(): void
     {
+        abort_unless(
+            auth()->user()->can($this->editingId ? 'recruitment.edit' : 'recruitment.create'),
+            403
+        );
         $this->validate();
 
         $data = [
@@ -173,6 +182,7 @@ class JobIndex extends Component
 
     public function changeStatus(int $id, string $status): void
     {
+        abort_unless(auth()->user()->can('recruitment.edit'), 403);
         JobVacancy::findOrFail($id)->update(['status' => $status]);
         session()->flash('success', 'Status lowongan diperbarui.');
     }
@@ -185,6 +195,7 @@ class JobIndex extends Component
 
     public function delete(): void
     {
+        abort_unless(auth()->user()->can('recruitment.delete'), 403);
         JobVacancy::findOrFail($this->deletingId)->delete();
         session()->flash('success', 'Lowongan dihapus.');
         $this->showDeleteModal = false;

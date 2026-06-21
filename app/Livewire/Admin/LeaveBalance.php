@@ -12,22 +12,24 @@ class LeaveBalance extends Component
 {
     use WithPagination;
 
-    public string $search       = '';
+    public string $search = '';
     public string $schoolFilter = '';
-    public string $typeFilter   = '';
-    public int    $yearFilter;
+    public string $typeFilter = '';
+    public int $yearFilter;
 
     public bool $showGenerateModal = false;
-    public int  $generateYear;
+    public int $generateYear;
 
     public function mount(): void
     {
-        $this->yearFilter    = now()->year;
-        $this->generateYear  = now()->year;
+        abort_unless(auth()->user()->can('leave.balance'), 403);
+        $this->yearFilter = now()->year;
+        $this->generateYear = now()->year;
     }
 
     public function generateBalances(): void
     {
+        abort_unless(auth()->user()->can('leave.balance'), 403);
         LeaveBalanceModel::generateForYear($this->generateYear);
         session()->flash('success', "Saldo cuti tahun {$this->generateYear} berhasil di-generate untuk semua pegawai aktif.");
         $this->showGenerateModal = false;
@@ -35,24 +37,26 @@ class LeaveBalance extends Component
 
     public function render()
     {
-        $employees = Employee::with(['school','activeAssignment.position'])
-            ->whereIn('status',['active','probation'])
-            ->when($this->search, fn($q) => $q->where('name','like',"%{$this->search}%"))
+        $employees = Employee::with(['school', 'activeAssignment.position'])
+            ->whereIn('status', ['active', 'probation'])
+            ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->when($this->schoolFilter, fn($q) => $q->where('school_id', $this->schoolFilter))
             ->orderBy('name')
             ->paginate(20);
 
         $employeeIds = $employees->pluck('id');
-        $balances    = LeaveBalanceModel::whereIn('employee_id', $employeeIds)
+        $balances = LeaveBalanceModel::whereIn('employee_id', $employeeIds)
             ->where('year', $this->yearFilter)
             ->when($this->typeFilter, fn($q) => $q->where('leave_type_id', $this->typeFilter))
             ->get()
             ->groupBy('employee_id');
 
         $leaveTypes = LeaveType::active()->orderBy('name')->get();
-        $schools    = School::active()->orderBy('name')->get();
+        $schools = School::active()->orderBy('name')->get();
 
-        return view('livewire.admin.leave-balance',
-            compact('employees','balances','leaveTypes','schools'));
+        return view(
+            'livewire.admin.leave-balance',
+            compact('employees', 'balances', 'leaveTypes', 'schools')
+        );
     }
 }

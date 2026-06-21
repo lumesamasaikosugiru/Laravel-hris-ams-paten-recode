@@ -73,9 +73,15 @@ class UserManagement extends Component
         'role.required' => 'Role wajib dipilih.',
     ];
 
+    public function mount(): void
+    {
+        abort_unless(auth()->user()->can('user.manage'), 403);
+    }
+
     // ── Open Modal Tambah ─────────────────────────────────────
     public function openCreate(): void
     {
+        abort_unless(auth()->user()->can('user.manage'), 403);
         $this->reset(['name', 'email', 'password', 'role', 'employee_id', 'editingId']);
         $this->isEdit = false;
         $this->is_active = true;
@@ -86,6 +92,7 @@ class UserManagement extends Component
     // ── Open Modal Edit ───────────────────────────────────────
     public function openEdit(int $id): void
     {
+        abort_unless(auth()->user()->can('user.manage'), 403);
         $user = User::with(['roles', 'employee'])->findOrFail($id);
         $this->editingId = $id;
         $this->isEdit = true;
@@ -103,6 +110,7 @@ class UserManagement extends Component
     // ── Simpan User ───────────────────────────────────────────
     public function save(): void
     {
+        abort_unless(auth()->user()->can('user.manage'), 403);
         $this->validate();
 
         DB::transaction(function () {
@@ -157,6 +165,7 @@ class UserManagement extends Component
     // ── Reset Password ────────────────────────────────────────
     public function openPasswordModal(int $id): void
     {
+        abort_unless(auth()->user()->can('user.manage'), 403);
         $user = User::findOrFail($id);
         $this->passwordUserId = $id;
         $this->passwordName = $user->name;
@@ -167,6 +176,7 @@ class UserManagement extends Component
 
     public function resetPassword(): void
     {
+        abort_unless(auth()->user()->can('user.manage'), 403);
         $this->validate(['newPassword' => 'required|min:8'], [
             'newPassword.required' => 'Password baru wajib diisi.',
             'newPassword.min' => 'Password minimal 8 karakter.',
@@ -182,6 +192,7 @@ class UserManagement extends Component
     // ── Link ke Pegawai ───────────────────────────────────────
     public function openLinkModal(int $id): void
     {
+        abort_unless(auth()->user()->can('user.manage'), 403);
         $user = User::with('employee')->findOrFail($id);
         $this->linkUserId = $id;
         $this->linkUserName = $user->name;
@@ -194,6 +205,7 @@ class UserManagement extends Component
 
     public function saveLink(): void
     {
+        abort_unless(auth()->user()->can('user.manage'), 403);
         $this->validate(['linkEmployeeId' => 'required|exists:employees,id'], [
             'linkEmployeeId.required' => 'Pilih pegawai.',
         ]);
@@ -222,6 +234,7 @@ class UserManagement extends Component
     // ── Toggle Aktif/Nonaktif ─────────────────────────────────
     public function openToggleModal(int $id): void
     {
+        abort_unless(auth()->user()->can('user.manage'), 403);
         $user = User::findOrFail($id);
         $this->toggleUserId = $id;
         $this->toggleUserName = $user->name;
@@ -231,6 +244,7 @@ class UserManagement extends Component
 
     public function toggleActive(): void
     {
+        abort_unless(auth()->user()->can('user.manage'), 403);
         $user = User::findOrFail($this->toggleUserId);
         $user->update(['is_active' => !$user->is_active]);
 

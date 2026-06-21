@@ -15,6 +15,11 @@ class EmployeeIndex extends Component
     public string $typeFilter = '';
     public string $statusFilter = 'active';
 
+    public function mount(): void
+    {
+        abort_unless(auth()->user()->can('employee.view'), 403);
+    }
+
     public function updatingSearch(): void
     {
         $this->resetPage();

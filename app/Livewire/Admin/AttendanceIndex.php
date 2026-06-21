@@ -27,6 +27,7 @@ class AttendanceIndex extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()->can('attendance.view'), 403);
         $this->dateFilter = now()->format('Y-m-d');
         $this->manualDate = now()->format('Y-m-d');
         $this->manualCheckIn = now()->format('H:i');
@@ -34,6 +35,7 @@ class AttendanceIndex extends Component
 
     public function openModal(): void
     {
+        abort_unless(auth()->user()->can('attendance.create'), 403);
         $this->selectedEmployeeId = null;
         $this->manualDate = now()->format('Y-m-d');
         $this->manualCheckIn = now()->format('H:i');
@@ -46,6 +48,7 @@ class AttendanceIndex extends Component
 
     public function saveManual(): void
     {
+        abort_unless(auth()->user()->can('attendance.create'), 403);
         $this->validate([
             'selectedEmployeeId' => 'required|exists:employees,id',
             'manualDate' => 'required|date',
@@ -79,6 +82,7 @@ class AttendanceIndex extends Component
 
     public function openEdit(int $id): void
     {
+        abort_unless(auth()->user()->can('attendance.edit'), 403);
         $att = Attendance::with('employee')->findOrFail($id);
         $this->editingId = $id;
         $this->selectedEmployeeId = $att->employee_id;
@@ -92,6 +96,7 @@ class AttendanceIndex extends Component
 
     public function updateAttendance(): void
     {
+        abort_unless(auth()->user()->can('attendance.edit'), 403);
         $calc = $this->manualCheckIn
             ? Attendance::calculate($this->manualCheckIn, $this->manualCheckOut ?: null)
             : ['status' => 'absent', 'lateMinutes' => 0, 'workMinutes' => 0];

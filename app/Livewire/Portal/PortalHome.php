@@ -11,9 +11,9 @@ class PortalHome extends Component
 {
     public function render()
     {
-        $user     = auth()->user();
+        $user = auth()->user();
         $employee = Employee::where('user_id', $user->id)
-            ->with(['school','activeAssignment.position','additionalAssignment.school'])
+            ->with(['school', 'activeAssignment.position', 'additionalAssignment.school'])
             ->first();
 
         $today = now()->format('Y-m-d');
@@ -30,11 +30,14 @@ class PortalHome extends Component
                 ->where('status', 'pending')->count()
             : 0;
 
-        // Saldo cuti (cuti tahunan)
+        // Untuk guru: tampilkan saldo Izin Tidak Masuk
+        // Untuk non-guru: tampilkan saldo Cuti Tahunan
+        $leaveTypeName = $employee?->is_guru ? 'Izin Tidak Masuk' : 'Cuti Tahunan';
+
         $leaveBalance = $employee
             ? LeaveBalance::where('employee_id', $employee->id)
                 ->where('year', now()->year)
-                ->whereHas('leaveType', fn($q) => $q->where('name', 'Cuti Tahunan'))
+                ->whereHas('leaveType', fn($q) => $q->where('name', $leaveTypeName))
                 ->first()
             : null;
 
@@ -47,7 +50,9 @@ class PortalHome extends Component
                 ->groupBy('status')->pluck('total', 'status')
             : collect();
 
-        return view('livewire.portal.portal-home',
-            compact('employee','todayAttendance','pendingLeave','leaveBalance','monthlyAttendance'));
+        return view(
+            'livewire.portal.portal-home',
+            compact('employee', 'todayAttendance', 'pendingLeave', 'leaveBalance', 'monthlyAttendance')
+        );
     }
 }

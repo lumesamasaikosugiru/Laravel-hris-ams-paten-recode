@@ -291,7 +291,10 @@ class PortalLeave extends Component
         $balances = $employee
             ? LeaveBalance::where('employee_id', $employee->id)
                 ->where('year', now()->year)
-                ->with('leaveType')->get()
+                ->with('leaveType')
+                ->get()
+                ->filter(fn($bal) => LeaveService::isLeaveTypeAllowed($bal->leaveType, $employee))
+                ->values()
             : collect();
 
         $leaveTypes = $employee

@@ -538,6 +538,11 @@ php artisan hris:check-probation               # Manual cek masa percobaan
 
 ## Changelog
 
+### 11 Juli 2026
+
+- **Fix bug tampilan saldo cuti untuk guru di Portal Beranda** — card "Sisa Cuti Tahunan" di `PortalHome` sebelumnya hardcode mencari saldo `Cuti Tahunan` tanpa mempedulikan apakah pegawai berhak. Untuk guru (`is_guru = true`), card ini sekarang menampilkan saldo **Izin Tidak Masuk** sebagai gantinya. Label card juga dibuat dinamis (`$leaveBalance?->leaveType->name`) sehingga otomatis menyesuaikan jenis cuti yang ditampilkan. File: `PortalHome.php` + `portal-home.blade.php`.
+- **Fix bug saldo cuti untuk guru di halaman Cuti Portal** — `PortalLeave.php` sudah memfilter dropdown jenis cuti via `LeaveService::isLeaveTypeAllowed()`, tapi query `$balances` (daftar progress bar saldo) tidak difilter dengan cara yang sama. Akibatnya Cuti Tahunan tetap muncul di daftar saldo meski guru tidak berhak. Diperbaiki dengan menambahkan `->filter(fn($bal) => LeaveService::isLeaveTypeAllowed($bal->leaveType, $employee))->values()` ke query balances. File: `PortalLeave.php`.
+
 ### 21 Juni 2026
 
 - **Defense-in-depth (`abort_unless`) diperluas ke 13 komponen Livewire Admin** yang sebelumnya hanya dilindungi Blade `@can` + middleware route: `SchoolIndex`, `DepartmentIndex`, `PositionIndex`, `SkillIndex`, `LeaveTypeIndex` (`master.view/create/edit/delete`), `UserManagement` (`user.manage`, di SETIAP method — paling ketat), `AttendanceIndex` (`attendance.view/create/edit`), `AttendanceReport` (`attendance.report`/`export`), `LeaveBalance` (`leave.balance`), `ApplicantIndex` (`recruitment.view/edit/convert`), `JobIndex` (`recruitment.view/create/edit/delete`), `EmployeeIndex` (`employee.view`), `AdditionalAssignment` (`employee.view/edit`). Total sekarang 16 dari 17 komponen Admin punya lapis 3 (`OffsiteApproval` sengaja tidak, karena sudah read-only tanpa aksi apa pun).

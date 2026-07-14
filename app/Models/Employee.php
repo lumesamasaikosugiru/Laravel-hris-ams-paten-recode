@@ -72,7 +72,16 @@ class Employee extends Model
     }
     public function activeAssignment()
     {
-        return $this->hasOne(PositionAssignment::class)->where('is_active', true)->latest();
+        // WAJIB filter assignment_type = 'primary' -- tanpa ini, kalau
+        // tugas tambahan ('additional') dibuat lebih baru dari jabatan
+        // utama, ->latest() akan mengembalikan baris 'additional' bukan
+        // 'primary', sehingga card "Jabatan Aktif" di halaman detail
+        // pegawai menampilkan tugas tambahan alih-alih jabatan induk.
+        // Bug ini terkonfirmasi dan diperbaiki 14 Juli 2026.
+        return $this->hasOne(PositionAssignment::class)
+            ->where('is_active', true)
+            ->where('assignment_type', 'primary')
+            ->latest();
     }
     public function statusHistories()
     {

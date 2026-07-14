@@ -293,7 +293,7 @@
                 @php
                     $assignments = $employee
                         ->positionAssignments()
-                        ->with(['position', 'department'])
+                        ->with(['position', 'department', 'school'])
                         ->orderByDesc('start_date')
                         ->get();
                 @endphp
@@ -325,17 +325,36 @@
                                                 <p class="text-xs text-gray-500">
                                                     {{ $assign->department->name }}
                                                 </p>
+                                                {{-- Nama sekolah/unit --}}
+                                                @if ($assign->school)
+                                                    <p class="text-xs text-violet-500 mt-0.5 flex items-center gap-1">
+                                                        <svg class="w-3 h-3 shrink-0" fill="none"
+                                                            viewBox="0 0 24 24" stroke-width="1.5"
+                                                            stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.627 48.627 0 0 1 12 20.904a48.627 48.627 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 3.741-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+                                                        </svg>
+                                                        {{ $assign->school->name }}
+                                                    </p>
+                                                @endif
                                             </div>
-                                            <span
-                                                class="badge shrink-0 text-xs
-                                                 {{ match ($assign->type) {
-                                                     'promotion' => 'badge-green',
-                                                     'mutation' => 'badge-blue',
-                                                     'demotion' => 'badge-red',
-                                                     default => 'badge-gray',
-                                                 } }}">
-                                                {{ $assign->type_label }}
-                                            </span>
+                                            <div class="flex flex-col items-end gap-1 shrink-0">
+                                                <span
+                                                    class="badge text-xs
+                                                    {{ match ($assign->type) {
+                                                        'promotion' => 'badge-green',
+                                                        'mutation' => 'badge-blue',
+                                                        'demotion' => 'badge-red',
+                                                        default => 'badge-gray',
+                                                    } }}">
+                                                    {{ $assign->type_label }}
+                                                </span>
+                                                @if ($assign->assignment_type === 'additional')
+                                                    <span class="badge badge-gray text-[10px]">
+                                                        Tugas Tambahan
+                                                    </span>
+                                                @endif
+                                            </div>
                                         </div>
                                         <p class="text-xs text-gray-400 mt-1">
                                             {{ $assign->start_date->format('d M Y') }}
@@ -450,6 +469,62 @@
                                 </p>
                             @endif
                         </div>
+
+                        {{-- ⚠ Panel konflik tugas tambahan --}}
+                        {{-- Muncul hanya jika sekolah tujuan = sekolah tugas tambahan aktif --}}
+                        @if ($conflictingAdditional)
+                            <div class="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 space-y-3">
+                                <div class="flex items-start gap-2">
+                                    <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none"
+                                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                    </svg>
+                                    <div>
+                                        <p class="text-sm font-semibold text-amber-800">Pegawai ini punya Tugas
+                                            Tambahan aktif di sekolah ini</p>
+                                        <p class="text-xs text-amber-700 mt-1">
+                                            <span class="font-medium">{{ $conflictingAdditional['position'] }}</span>
+                                            · {{ $conflictingAdditional['department'] }}
+                                            · sejak {{ $conflictingAdditional['since'] }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <p class="text-xs text-amber-700 font-medium">Tugas tambahan ini mau diapakan?</p>
+
+                                <div class="space-y-2">
+                                    <label class="flex items-start gap-3 cursor-pointer group">
+                                        <input wire:model.live="additionalConflictAction" type="radio"
+                                            value="end" class="mt-0.5 accent-amber-600 shrink-0">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-800 group-hover:text-amber-700">
+                                                Akhiri otomatis saat mutasi berlaku
+                                            </p>
+                                            <p class="text-xs text-gray-500">Tanggal selesai tugas tambahan = tanggal
+                                                berlaku mutasi</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="flex items-start gap-3 cursor-pointer group">
+                                        <input wire:model.live="additionalConflictAction" type="radio"
+                                            value="keep" class="mt-0.5 accent-amber-600 shrink-0">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-800 group-hover:text-amber-700">
+                                                Biarkan tetap aktif — saya akan urus manual
+                                            </p>
+                                            <p class="text-xs text-gray-500">Tugas tambahan tidak diubah, bisa diakhiri
+                                                dari halaman detail pegawai nanti</p>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                @error('additionalConflictAction')
+                                    <p class="text-xs text-red-600 font-medium">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @endif
+
                     @endif
 
                     <div>

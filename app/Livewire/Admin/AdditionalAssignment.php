@@ -13,6 +13,20 @@ class AdditionalAssignment extends Component
 {
     public Employee $employee;
 
+    // Livewire v4: listen event yang di-dispatch EmployeeDetail
+    // saat mutasi/promosi/demosi berhasil disimpan, supaya komponen
+    // ini ikut refresh tanpa harus reload halaman penuh.
+    protected $listeners = ['assignment-saved' => 'refreshEmployee'];
+
+    public function refreshEmployee(): void
+    {
+        $this->employee = $this->employee->fresh([
+            'additionalAssignment.school',
+            'additionalAssignment.department',
+            'additionalAssignment.position',
+        ]);
+    }
+
     // Modal tambah
     public bool $showAddModal = false;
     public bool $showEndModal = false;
@@ -119,6 +133,7 @@ class AdditionalAssignment extends Component
         session()->flash('success', 'Tugas tambahan berhasil ditambahkan.');
         $this->showAddModal = false;
         $this->employee->refresh();
+        $this->dispatch('additional-assignment-saved');
     }
 
     public function openEndModal(): void
@@ -149,6 +164,7 @@ class AdditionalAssignment extends Component
         session()->flash('success', 'Tugas tambahan berhasil diakhiri.');
         $this->showEndModal = false;
         $this->employee->refresh();
+        $this->dispatch('additional-assignment-saved');
     }
 
     public function render()

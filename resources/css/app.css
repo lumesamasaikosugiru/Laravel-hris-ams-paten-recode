@@ -173,10 +173,13 @@
         backdrop-filter: blur(2px);
     }
     .modal-box {
-        @apply bg-white rounded-2xl shadow-2xl w-full;
+        @apply bg-white rounded-2xl shadow-2xl w-full flex flex-col;
+        max-height: calc(
+            100dvh - 2rem
+        ); /* 2rem = padding atas+bawah backdrop (p-4) */
     }
     .modal-header {
-        @apply px-6 py-4 flex items-center justify-between rounded-t-2xl;
+        @apply px-6 py-4 flex items-center justify-between rounded-t-2xl shrink-0;
         background: linear-gradient(
             to right,
             var(--c-modal-from),
@@ -187,10 +190,10 @@
         @apply text-base font-semibold text-white;
     }
     .modal-body {
-        @apply px-6 py-5 space-y-4;
+        @apply px-6 py-5 space-y-4 overflow-y-auto flex-1 min-h-0;
     }
     .modal-footer {
-        @apply px-6 py-4 flex justify-end gap-2 bg-gray-50 rounded-b-2xl border-t border-gray-200;
+        @apply px-6 py-4 flex justify-end gap-2 bg-gray-50 rounded-b-2xl border-t border-gray-200 shrink-0;
     }
 
     /* Badges */

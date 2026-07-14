@@ -28,7 +28,30 @@ class EmployeeDetail extends Component
     public $assignDepts = [];
     public $assignPositions = [];
 
+    // Konflik tugas tambahan: muncul saat sekolah tujuan mutasi
+    // sama dengan sekolah tugas tambahan aktif pegawai ini.
+    // null = tidak ada konflik, array = data tugas tambahan yang konflik.
+    public ?array $conflictingAdditional = null;
+    public string $additionalConflictAction = ''; // 'end' atau 'keep'
+
     public bool $showDeleteModal = false;
+
+    // Livewire v4: listen event dari AdditionalAssignment (child)
+    // saat tugas tambahan ditambah/diakhiri, supaya Riwayat Jabatan
+    // di halaman ini ikut terupdate tanpa reload halaman penuh.
+    protected $listeners = ['additional-assignment-saved' => 'refreshFromChild'];
+
+    public function refreshFromChild(): void
+    {
+        $this->employee = $this->employee->fresh([
+            'school',
+            'positionAssignments.position',
+            'positionAssignments.department',
+            'positionAssignments.school',
+            'activeAssignment.position',
+            'activeAssignment.department',
+        ]);
+    }
 
     public function confirmDelete(): void
     {
@@ -155,6 +178,8 @@ class EmployeeDetail extends Component
         $this->assign_dept_id = '';
         $this->assign_pos_id = '';
         $this->assignPositions = [];
+        $this->conflictingAdditional = null;
+        $this->additionalConflictAction = '';
 
         if ($this->assign_type === 'mutation') {
             // Biarkan user pilih sekolah tujuan
@@ -171,16 +196,39 @@ class EmployeeDetail extends Component
 
     /**
      * Saat sekolah tujuan dipilih (mutasi), reload departemen
-     * sesuai sekolah tujuan tersebut.
+     * dan cek apakah ada tugas tambahan aktif di sekolah tersebut.
      */
     public function updatedAssignSchoolId($value): void
     {
         $this->assign_dept_id = '';
         $this->assign_pos_id = '';
         $this->assignPositions = [];
+        $this->conflictingAdditional = null;
+        $this->additionalConflictAction = '';
+
         $this->assignDepts = $value
             ? Department::active()->where('school_id', $value)->orderBy('name')->get()
             : collect();
+
+        // Deteksi konflik: apakah sekolah tujuan = sekolah tugas tambahan aktif?
+        if ($value && $value != $this->employee->school_id) {
+            $additional = PositionAssignment::with(['position', 'department', 'school'])
+                ->where('employee_id', $this->employee->id)
+                ->where('is_active', true)
+                ->where('assignment_type', 'additional')
+                ->where('school_id', $value)
+                ->first();
+
+            if ($additional) {
+                $this->conflictingAdditional = [
+                    'id' => $additional->id,
+                    'position' => $additional->position->name,
+                    'department' => $additional->department->name,
+                    'school' => $additional->school->name,
+                    'since' => $additional->start_date->format('d M Y'),
+                ];
+            }
+        }
     }
 
     public function updatedAssignDeptId($value): void
@@ -193,10 +241,17 @@ class EmployeeDetail extends Component
     public function openAssignModal(): void
     {
         abort_unless(auth()->user()->can('employee.edit'), 403);
-        $this->reset(['assign_dept_id', 'assign_pos_id', 'assign_notes', 'assign_school_id']);
+        $this->reset([
+            'assign_dept_id',
+            'assign_pos_id',
+            'assign_notes',
+            'assign_school_id',
+            'conflictingAdditional',
+            'additionalConflictAction'
+        ]);
         $this->assign_type = 'mutation';
         $this->assign_start_date = now()->format('Y-m-d');
-        $this->assignDepts = [];       // kosong dulu, user pilih sekolah tujuan
+        $this->assignDepts = [];
         $this->assignPositions = [];
         $this->resetValidation();
         $this->showAssignModal = true;
@@ -220,26 +275,41 @@ class EmployeeDetail extends Component
             'assign_pos_id' => 'required|exists:positions,id',
             'assign_start_date' => 'required|date',
             'assign_notes' => 'nullable|string|max:500',
+            'additionalConflictAction' => $this->conflictingAdditional
+                ? 'required|in:end,keep'
+                : 'nullable',
         ], [
             'assign_school_id.required' => 'Sekolah tujuan wajib dipilih untuk mutasi.',
             'assign_dept_id.required' => 'Departemen wajib dipilih.',
             'assign_pos_id.required' => 'Jabatan wajib dipilih.',
             'assign_start_date.required' => 'Tanggal mulai wajib diisi.',
+            'additionalConflictAction.required' => 'Pilih salah satu tindakan untuk tugas tambahan yang konflik.',
         ]);
 
         DB::transaction(function () use ($targetSchoolId) {
             $isCrossSchool = $this->assign_type === 'mutation'
                 && (int) $targetSchoolId !== (int) $this->employee->school_id;
 
-            // Tutup assignment aktif
+            // Tutup assignment UTAMA (primary) yang aktif
             PositionAssignment::where('employee_id', $this->employee->id)
                 ->where('is_active', true)
+                ->where('assignment_type', 'primary')
                 ->update([
                     'is_active' => false,
                     'end_date' => $this->assign_start_date,
                 ]);
 
-            // Buat assignment baru
+            // Tangani tugas tambahan yang konflik (jika ada dan SDM pilih 'end')
+            if ($this->conflictingAdditional && $this->additionalConflictAction === 'end') {
+                PositionAssignment::where('id', $this->conflictingAdditional['id'])
+                    ->update([
+                        'is_active' => false,
+                        'end_date' => $this->assign_start_date,
+                    ]);
+            }
+            // Kalau 'keep': tugas tambahan dibiarkan aktif, SDM akan urus manual
+
+            // Buat assignment baru (primary)
             PositionAssignment::create([
                 'employee_id' => $this->employee->id,
                 'school_id' => $targetSchoolId,
@@ -247,15 +317,14 @@ class EmployeeDetail extends Component
                 'position_id' => $this->assign_pos_id,
                 'start_date' => $this->assign_start_date,
                 'is_active' => true,
+                'assignment_type' => 'primary',
                 'type' => $this->assign_type,
                 'notes' => $this->assign_notes ?: null,
             ]);
 
-            // Kalau mutasi lintas sekolah: update sekolah induk pegawai
-            // dan catat riwayat perpindahan sekolah.
+            // Kalau mutasi lintas sekolah: update sekolah induk dan catat riwayat
             if ($isCrossSchool) {
                 $oldSchoolId = $this->employee->school_id;
-
                 $this->employee->update(['school_id' => $targetSchoolId]);
 
                 EmployeeSchoolHistory::create([
@@ -269,7 +338,7 @@ class EmployeeDetail extends Component
             }
         });
 
-        // Reload data pegawai agar header & riwayat jabatan langsung update
+        // Reload data pegawai
         $this->employee = $this->employee->fresh([
             'school',
             'positionAssignments.position',
@@ -282,6 +351,7 @@ class EmployeeDetail extends Component
         $this->nipyPreview = $this->generateNipyPreview();
 
         session()->flash('success', 'Penugasan jabatan berhasil disimpan.');
+        $this->dispatch('assignment-saved');
         $this->showAssignModal = false;
     }
 

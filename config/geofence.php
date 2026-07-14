@@ -3,7 +3,7 @@
  * Konfigurasi Geofencing Yayasan Fatahillah
  *
  * Cara update koordinat:
- * 1. Buka Google Maps → klik lokasi → copy koordinat
+ * 1. Buka Google Maps, klik lokasi, copy koordinat
  * 2. Edit nilai lat/lng di array locations di bawah
  * 3. Jalankan: php artisan config:clear
  */
@@ -19,7 +19,7 @@ return [
     | nilai aktual di kode) -> 200m (default awal saat fitur GPS pertama
     | dibuat) -> 100m (sempat dikukuhkan 19 Juni 2026) -> 30m (nilai final
     | saat ini, diturunkan setelah testing lapangan). Opsi radius berbeda
-    | per unit sudah dipertimbangkan dan SENGAJA tidak dipakai — yayasan
+    | per unit sudah dipertimbangkan dan SENGAJA tidak dipakai -- yayasan
     | memilih satu nilai seragam untuk semua lokasi demi kesederhanaan.
     */
     'radius' => env('GEOFENCE_RADIUS', 30),
@@ -37,12 +37,12 @@ return [
     |--------------------------------------------------------------------------
     | Lokasi Resmi Yayasan Fatahillah (8 titik)
     |--------------------------------------------------------------------------
-    | Koordinat mengacu pada Google Maps. Untuk update: buka Maps → klik
-    | titik lokasi → copy koordinat lat/lng → edit di sini → config:clear.
+    | Koordinat mengacu pada Google Maps. Untuk update: buka Maps, klik
+    | titik lokasi, copy koordinat lat/lng, edit di sini, lalu config:clear.
     |
     | CATATAN: 'Kantor 2 YPF Cilegon' dan 'SMK YP. Fatahillah 1 Cilegon
     | Kampus 1' berada di area yang sangat berdekatan (koordinat berbeda
-    | tipis) — ini kondisi fisik lapangan, bukan duplikasi data.
+    | tipis) -- ini kondisi fisik lapangan, bukan duplikasi data.
     |
     | Semua koordinat dikonfirmasi akurat per 14 Juli 2026. Jangan ubah
     | tanpa verifikasi ulang ke lapangan atau Google Maps terbaru.

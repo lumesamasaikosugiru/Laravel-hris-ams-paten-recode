@@ -196,7 +196,7 @@
             <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-0.5">
 
                 @can('dashboard.view')
-                    <a href="{{ route('dashboard') }}"
+                    <a href="{{ route('dashboard') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -210,7 +210,7 @@
 
                 @can('master.view')
                     <div class="sb-section">Master Data</div>
-                    <a href="{{ route('admin.schools.index') }}"
+                    <a href="{{ route('admin.schools.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.schools.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -220,7 +220,7 @@
                         <span class="sidebar-text">Sekolah</span>
                         <span class="nav-tooltip">Sekolah</span>
                     </a>
-                    <a href="{{ route('admin.departments.index') }}"
+                    <a href="{{ route('admin.departments.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -230,7 +230,7 @@
                         <span class="sidebar-text">Departemen</span>
                         <span class="nav-tooltip">Departemen</span>
                     </a>
-                    <a href="{{ route('admin.positions.index') }}"
+                    <a href="{{ route('admin.positions.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.positions.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -240,7 +240,7 @@
                         <span class="sidebar-text">Jabatan</span>
                         <span class="nav-tooltip">Jabatan</span>
                     </a>
-                    <a href="{{ route('admin.skills.index') }}"
+                    <a href="{{ route('admin.skills.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.skills.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -250,7 +250,7 @@
                         <span class="sidebar-text">Skill</span>
                         <span class="nav-tooltip">Skill</span>
                     </a>
-                    <a href="{{ route('admin.leave-types.index') }}"
+                    <a href="{{ route('admin.leave-types.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.leave-types.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -264,7 +264,7 @@
 
                 @can('recruitment.view')
                     <div class="sb-section">Rekrutmen</div>
-                    <a href="{{ route('admin.jobs.index') }}"
+                    <a href="{{ route('admin.jobs.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.jobs.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -274,7 +274,7 @@
                         <span class="sidebar-text">Lowongan Kerja</span>
                         <span class="nav-tooltip">Lowongan Kerja</span>
                     </a>
-                    <a href="{{ route('admin.applicants.index') }}"
+                    <a href="{{ route('admin.applicants.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.applicants.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -288,7 +288,7 @@
 
                 @can('employee.view')
                     <div class="sb-section">Kepegawaian</div>
-                    <a href="{{ route('admin.employees.index') }}"
+                    <a href="{{ route('admin.employees.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -302,7 +302,7 @@
 
                 @can('attendance.view')
                     <div class="sb-section">Absensi</div>
-                    <a href="{{ route('admin.attendance.index') }}"
+                    <a href="{{ route('admin.attendance.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.attendance.index') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -312,7 +312,7 @@
                         <span class="sidebar-text">Absensi Harian</span>
                         <span class="nav-tooltip">Absensi Harian</span>
                     </a>
-                    <a href="{{ route('admin.offsite-approvals') }}"
+                    <a href="{{ route('admin.offsite-approvals') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.offsite-approvals') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -326,7 +326,7 @@
                     </a>
                 @endcan
                 @can('attendance.report')
-                    <a href="{{ route('admin.attendance.report') }}"
+                    <a href="{{ route('admin.attendance.report') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.attendance.report') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -340,7 +340,7 @@
 
                 @can('leave.view')
                     <div class="sb-section">Cuti & Izin</div>
-                    <a href="{{ route('admin.leaves.index') }}"
+                    <a href="{{ route('admin.leaves.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.leaves.index') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -352,7 +352,7 @@
                     </a>
                 @endcan
                 @can('leave.balance')
-                    <a href="{{ route('admin.leaves.balance') }}"
+                    <a href="{{ route('admin.leaves.balance') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.leaves.balance') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -366,7 +366,7 @@
 
                 @can('report.view')
                     <div class="sb-section">Laporan</div>
-                    <a href="{{ route('admin.reports.index') }}"
+                    <a href="{{ route('admin.reports.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -398,7 +398,7 @@
             <div class="px-3 py-3 border-t border-white/10 shrink-0">
                 @can('user.manage')
                     <div class="sb-section">Sistem</div>
-                    <a href="{{ route('admin.users.index') }}"
+                    <a href="{{ route('admin.users.index') }}" wire:navigate
                         class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor">
@@ -447,7 +447,7 @@
                 <div class="flex items-center gap-3 shrink-0">
                     {{-- Switch ke Portal — untuk role yang juga punya akses Portal mobile --}}
                     @hasanyrole('kepala_bidang|staf_yayasan|sekretaris|bendahara|ketua|staf_sdm')
-                        <a href="{{ route('portal.home') }}"
+                        <a href="{{ route('portal.home') }}" wire:navigate
                             class="hidden sm:flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:bg-violet-50 px-3 py-1.5 rounded-lg transition">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor">
@@ -550,6 +550,20 @@
         document.addEventListener('click', (e) => {
             if (window.innerWidth < 1024 && e.target.closest('#sidebar a.nav-link')) {
                 window.toggleSidebar(false);
+            }
+        });
+
+        // SPA mode: setelah navigasi wire:navigate selesai, scroll sidebar
+        // supaya item aktif selalu terlihat tanpa harus scroll manual.
+        // livewire:navigated = event Livewire v4 yang di-fire setelah
+        // halaman baru selesai di-render (setara DOMContentLoaded untuk SPA).
+        document.addEventListener('livewire:navigated', () => {
+            const activeLink = document.querySelector('#sidebar .nav-link.active');
+            if (activeLink) {
+                activeLink.scrollIntoView({
+                    block: 'nearest',
+                    behavior: 'smooth'
+                });
             }
         });
 

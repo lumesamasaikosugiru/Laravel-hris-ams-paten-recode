@@ -2,7 +2,7 @@
 
 > **Human Resource Information System** — Sistem informasi SDM berbasis web untuk Yayasan Fatahillah. Mengelola seluruh siklus kepegawaian: rekrutmen, masa percobaan, NIPY, absensi (manual + GPS Geofencing), cuti, dan laporan dalam satu platform terpadu yang mendukung struktur multi-sekolah, dengan dua titik akses: Dashboard (admin) dan Portal Mobile (self-service pegawai).
 
-**Versi:** 1.4+ (pasca RBAC granular, fitur is_active, rantai approval, defense-in-depth) · **Status:** Production Ready — Portal & GPS Geofencing aktif di server online
+**Versi:** 1.4+ (pasca RBAC granular, fitur is_active, rantai approval, defense-in-depth, SPA navigasi) · **Status:** Production Ready — Portal & GPS Geofencing aktif di server online
 
 > 📘 **Dokumen referensi lengkap:** lihat _HRIS Yayasan Fatahillah — Dokumen Konteks Master_ (.docx) untuk detail menyeluruh skema database, semua relasi model, dan daftar temuan/diskrepansi yang sedang dipantau. README ini sengaja dibuat ringkas untuk kebutuhan harian — **README ini yang paling sering update**, dokumen Master di-update berkala/menyeluruh.
 
@@ -270,25 +270,25 @@ Format: `YY` + `PP` + `KK` + `NNNN`
 
 ## Aturan Bisnis Fatahillah
 
-| Aturan                             | Nilai                                                                                    | Lokasi Konfigurasi                            |
-| ---------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------- |
-| Usia pensiun                       | 60 tahun                                                                                 | `Employee::RETIREMENT_AGE`                    |
-| Jam masuk standar                  | 07:00 WIB                                                                                | `Attendance::WORK_START`                      |
-| Jam selesai kerja                  | 15:00 WIB                                                                                | `Attendance::WORK_END`                        |
-| Hari kerja                         | Senin–Sabtu                                                                              | `LeaveRequest::WORK_DAYS`                     |
-| Radius valid lokasi absensi (GPS)  | **30 meter** (FINAL setelah testing lapangan — override via `GEOFENCE_RADIUS` di `.env`) | `config/geofence.php`                         |
-| Minimal pengajuan cuti             | H-5                                                                                      | `LeaveService::MIN_DAYS_BEFORE`               |
-| Cuti yang tidak boleh untuk guru   | Cuti Tahunan                                                                             | `LeaveService::EXCLUDED_FOR_GURU`             |
-| Tanggal selesai Haji/Umroh         | Otomatis penuh sesuai sisa saldo, tidak bisa diubah manual                               | `LeaveService::AUTO_FULL_BALANCE_LEAVE_TYPES` |
-| Masa percobaan non-guru            | 3 bulan                                                                                  | `NipyGenerator`                               |
-| Masa percobaan guru                | 6 bulan                                                                                  | `NipyGenerator`                               |
-| Pegawai probation dapat cuti       | ❌ Tidak                                                                                 | `LeaveService::validate()`                    |
-| Maksimal tugas tambahan aktif      | 1 per pegawai                                                                            | `AdditionalAssignment.php`                    |
-| Tugas tambahan lintas unit         | Wajib beda dari unit induk                                                               | `AdditionalAssignment::saveAdditional()`      |
-| Cuti pegawai dengan tugas tambahan | Hanya berlaku di sekolah INDUK, tidak mempengaruhi absensi sekolah tugas tambahan        | `LeaveIndex::processLeave()`                  |
-| Approver cuti harus sesuai rantai  | Hard block — lihat Rantai Approval Cuti                                                  | `LeaveService::LEAVE_APPROVER_CHAIN`          |
-| Kegiatan luar lokasi (offsite)     | Otomatis sah, tanpa approval — HR hanya lihat informasi                                  | `OffsiteApproval.php` (read-only)             |
-| Akun dinonaktifkan                 | Auto-logout langsung, tidak perlu tunggu sesi habis                                      | `CheckUserActive` middleware (`check.active`) |
+| Aturan                             | Nilai                                                                                                                  | Lokasi Konfigurasi                            |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Usia pensiun                       | 60 tahun                                                                                                               | `Employee::RETIREMENT_AGE`                    |
+| Jam masuk standar                  | 07:00 WIB                                                                                                              | `Attendance::WORK_START`                      |
+| Jam selesai kerja                  | 15:00 WIB                                                                                                              | `Attendance::WORK_END`                        |
+| Hari kerja                         | Senin–Sabtu                                                                                                            | `LeaveRequest::WORK_DAYS`                     |
+| Radius valid lokasi absensi (GPS)  | **30 meter** (FINAL 14 Juli 2026, turun dari 100m setelah testing lapangan — override via `GEOFENCE_RADIUS` di `.env`) | `config/geofence.php`                         |
+| Minimal pengajuan cuti             | H-5                                                                                                                    | `LeaveService::MIN_DAYS_BEFORE`               |
+| Cuti yang tidak boleh untuk guru   | Cuti Tahunan                                                                                                           | `LeaveService::EXCLUDED_FOR_GURU`             |
+| Tanggal selesai Haji/Umroh         | Otomatis penuh sesuai sisa saldo, tidak bisa diubah manual                                                             | `LeaveService::AUTO_FULL_BALANCE_LEAVE_TYPES` |
+| Masa percobaan non-guru            | 3 bulan                                                                                                                | `NipyGenerator`                               |
+| Masa percobaan guru                | 6 bulan                                                                                                                | `NipyGenerator`                               |
+| Pegawai probation dapat cuti       | ❌ Tidak                                                                                                               | `LeaveService::validate()`                    |
+| Maksimal tugas tambahan aktif      | 1 per pegawai                                                                                                          | `AdditionalAssignment.php`                    |
+| Tugas tambahan lintas unit         | Wajib beda dari unit induk                                                                                             | `AdditionalAssignment::saveAdditional()`      |
+| Cuti pegawai dengan tugas tambahan | Hanya berlaku di sekolah INDUK, tidak mempengaruhi absensi sekolah tugas tambahan                                      | `LeaveIndex::processLeave()`                  |
+| Approver cuti harus sesuai rantai  | Hard block — lihat Rantai Approval Cuti                                                                                | `LeaveService::LEAVE_APPROVER_CHAIN`          |
+| Kegiatan luar lokasi (offsite)     | Otomatis sah, tanpa approval — HR hanya lihat informasi                                                                | `OffsiteApproval.php` (read-only)             |
+| Akun dinonaktifkan                 | Auto-logout langsung, tidak perlu tunggu sesi habis                                                                    | `CheckUserActive` middleware (`check.active`) |
 
 ---
 
@@ -490,6 +490,7 @@ php artisan hris:check-probation                     # Manual cek masa percobaan
 | —        | Fitur Nonaktifkan Akun (`is_active`)   | ✅ Selesai                |
 | —        | Defense-in-depth (16/17 komponen)      | ✅ Selesai                |
 | —        | Rantai Approval Cuti per-role          | ✅ Selesai                |
+| —        | Navigasi SPA (`wire:navigate`)         | ✅ Selesai                |
 | 7        | Master Akademik & Jadwal (AMS)         | 🔲 Belum                  |
 | 8        | RPP & Review Workflow (AMS)            | 🔲 Belum                  |
 | 9        | Jurnal Mengajar (AMS)                  | 🔲 Belum                  |
@@ -510,6 +511,16 @@ php artisan hris:check-probation                     # Manual cek masa percobaan
 ---
 
 ## Changelog
+
+### 14 Juli 2026
+
+- **Navigasi SPA via `wire:navigate`** — 17 link sidebar ditambahkan `wire:navigate` sehingga navigasi antar halaman tidak lagi full reload. Ditambahkan handler `livewire:navigated` yang otomatis scroll sidebar ke item aktif setelah navigasi, menyelesaikan masalah item aktif tidak terlihat di layar kecil.
+- **Fix bug `Employee::activeAssignment()` salah ambil baris `additional`** — relasi tidak filter `assignment_type = 'primary'`, sehingga kalau tugas tambahan dibuat lebih baru dari jabatan induk, card "Jabatan Aktif" menampilkan tugas tambahan alih-alih jabatan induk. Diperbaiki dengan tambah `.where('assignment_type', 'primary')`.
+- **Nama sekolah/unit di Riwayat Jabatan** — sebelumnya hanya tampil jabatan + departemen + tanggal. Sekarang ditambahkan nama sekolah (ungu, ikon gedung) dan badge "Tugas Tambahan" untuk `assignment_type = 'additional'`. Query eager load ditambahkan `school` untuk mencegah N+1.
+- **Modal bisa di-scroll** — `modal-box` ditambahkan `flex flex-col` + `max-height: calc(100dvh - 2rem)`, `modal-body` ditambahkan `overflow-y-auto flex-1 min-h-0`, header/footer ditambahkan `shrink-0`. Berlaku global untuk semua modal di sistem. Fix di `app.css`.
+- **Form Mutasi lintas sekolah** — dropdown "Sekolah / Unit Tujuan" sekarang muncul saat jenis perubahan = Mutasi. Saat sekolah tujuan = sekolah tugas tambahan aktif, panel peringatan kuning muncul otomatis di dalam modal dengan 2 pilihan: akhiri otomatis atau biarkan tetap aktif. `employees.school_id` dan `EmployeeSchoolHistory` diupdate otomatis saat mutasi lintas sekolah disimpan.
+- **Sinkronisasi lintas komponen Livewire** — `EmployeeDetail` dispatch `assignment-saved` → `AdditionalAssignment::refreshEmployee()` (card tugas tambahan update tanpa reload). `AdditionalAssignment` dispatch `additional-assignment-saved` → `EmployeeDetail::refreshFromChild()` (riwayat jabatan update tanpa reload).
+- **Radius geofencing diperbarui ke 30m** (dari 100m) setelah testing lapangan. Komentar `config/geofence.php` diperbarui: riwayat lengkap `500m → 200m → 100m → 30m`, catatan koordinat identik dihapus karena SMK 2 Cilegon kini punya koordinat berbeda dari Kampus 1.
 
 ### 11 Juli 2026
 

@@ -417,17 +417,51 @@
                 <div class="modal-body">
                     <div>
                         <label class="form-label">Jenis Perubahan <span class="text-red-500">*</span></label>
-                        <select wire:model="assign_type" class="input">
-                            <option value="mutation">Mutasi (pindah jabatan setara)</option>
+                        <select wire:model.live="assign_type" class="input">
+                            <option value="mutation">Mutasi (pindah jabatan/unit)</option>
                             <option value="promotion">Promosi (naik jabatan)</option>
                             <option value="demotion">Demosi (turun jabatan)</option>
                         </select>
                     </div>
+
+                    {{-- Sekolah tujuan: hanya tampil untuk mutasi --}}
+                    @if ($assign_type === 'mutation')
+                        <div>
+                            <label class="form-label">Sekolah / Unit Tujuan <span
+                                    class="text-red-500">*</span></label>
+                            <select wire:model.live="assign_school_id"
+                                class="input @error('assign_school_id') input-error @enderror">
+                                <option value="">-- Pilih Sekolah Tujuan --</option>
+                                @foreach ($assignSchools as $s)
+                                    <option value="{{ $s->id }}">
+                                        {{ $s->name }}
+                                        @if ($s->id == $employee->school_id)
+                                            (sekolah saat ini)
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('assign_school_id')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                            @if ($assign_school_id && $assign_school_id != $employee->school_id)
+                                <p class="text-xs text-amber-600 mt-1">
+                                    ⚠ Sekolah induk pegawai akan otomatis diperbarui setelah disimpan.
+                                </p>
+                            @endif
+                        </div>
+                    @endif
+
                     <div>
                         <label class="form-label">Departemen <span class="text-red-500">*</span></label>
                         <select wire:model.live="assign_dept_id"
-                            class="input @error('assign_dept_id') input-error @enderror">
-                            <option value="">-- Pilih Departemen --</option>
+                            class="input @error('assign_dept_id') input-error @enderror"
+                            {{ $assign_type === 'mutation' && !$assign_school_id ? 'disabled' : '' }}>
+                            <option value="">
+                                {{ $assign_type === 'mutation' && !$assign_school_id
+                                    ? '-- Pilih sekolah tujuan dulu --'
+                                    : '-- Pilih Departemen --' }}
+                            </option>
                             @foreach ($assignDepts as $d)
                                 <option value="{{ $d->id }}">{{ $d->name }}</option>
                             @endforeach

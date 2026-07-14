@@ -3,10 +3,12 @@ namespace App\Livewire\Admin;
 
 use Livewire\Component;
 use App\Models\Employee;
+use App\Models\School;
 use App\Models\Department;
 use App\Models\Position;
 use App\Models\PositionAssignment;
 use App\Models\EmployeeStatusHistory;
+use App\Models\EmployeeSchoolHistory;
 use App\Services\NipyGenerator;
 use Illuminate\Support\Facades\DB;
 
@@ -17,10 +19,12 @@ class EmployeeDetail extends Component
     // ── Assignment modal ──────────────────────────────────────
     public bool $showAssignModal = false;
     public string $assign_type = 'mutation';
+    public int|string $assign_school_id = '';  // sekolah tujuan (hanya untuk mutasi)
     public int|string $assign_dept_id = '';
     public int|string $assign_pos_id = '';
     public string $assign_start_date = '';
     public string $assign_notes = '';
+    public $assignSchools = [];    // semua sekolah aktif (untuk mutasi)
     public $assignDepts = [];
     public $assignPositions = [];
 
@@ -57,6 +61,9 @@ class EmployeeDetail extends Component
         ]);
 
         $this->assign_start_date = now()->format('Y-m-d');
+
+        // Untuk modal mutasi/promosi/demosi
+        $this->assignSchools = School::active()->orderBy('name')->get();
         $this->assignDepts = Department::active()
             ->where('school_id', $employee->school_id)
             ->orderBy('name')->get();
@@ -136,6 +143,46 @@ class EmployeeDetail extends Component
     }
 
     // ── Assignment ────────────────────────────────────────────
+
+    /**
+     * Saat jenis perubahan diubah:
+     * - Mutasi: reset sekolah tujuan (user pilih sendiri)
+     * - Promosi/Demosi: paksa sekolah = sekolah induk pegawai
+     *   (promosi/demosi TIDAK lintas sekolah)
+     */
+    public function updatedAssignType(): void
+    {
+        $this->assign_dept_id = '';
+        $this->assign_pos_id = '';
+        $this->assignPositions = [];
+
+        if ($this->assign_type === 'mutation') {
+            // Biarkan user pilih sekolah tujuan
+            $this->assign_school_id = '';
+            $this->assignDepts = [];
+        } else {
+            // Promosi/demosi selalu dalam sekolah yang sama
+            $this->assign_school_id = $this->employee->school_id;
+            $this->assignDepts = Department::active()
+                ->where('school_id', $this->employee->school_id)
+                ->orderBy('name')->get();
+        }
+    }
+
+    /**
+     * Saat sekolah tujuan dipilih (mutasi), reload departemen
+     * sesuai sekolah tujuan tersebut.
+     */
+    public function updatedAssignSchoolId($value): void
+    {
+        $this->assign_dept_id = '';
+        $this->assign_pos_id = '';
+        $this->assignPositions = [];
+        $this->assignDepts = $value
+            ? Department::active()->where('school_id', $value)->orderBy('name')->get()
+            : collect();
+    }
+
     public function updatedAssignDeptId($value): void
     {
         $this->assign_pos_id = '';
@@ -145,9 +192,11 @@ class EmployeeDetail extends Component
 
     public function openAssignModal(): void
     {
-        $this->reset(['assign_dept_id', 'assign_pos_id', 'assign_notes']);
+        abort_unless(auth()->user()->can('employee.edit'), 403);
+        $this->reset(['assign_dept_id', 'assign_pos_id', 'assign_notes', 'assign_school_id']);
         $this->assign_type = 'mutation';
         $this->assign_start_date = now()->format('Y-m-d');
+        $this->assignDepts = [];       // kosong dulu, user pilih sekolah tujuan
         $this->assignPositions = [];
         $this->resetValidation();
         $this->showAssignModal = true;
@@ -155,19 +204,33 @@ class EmployeeDetail extends Component
 
     public function saveAssignment(): void
     {
+        abort_unless(auth()->user()->can('employee.edit'), 403);
+
+        // Tentukan school_id yang akan dipakai untuk assignment baru
+        $targetSchoolId = $this->assign_type === 'mutation'
+            ? $this->assign_school_id
+            : $this->employee->school_id;
+
         $this->validate([
             'assign_type' => 'required|in:mutation,promotion,demotion',
+            'assign_school_id' => $this->assign_type === 'mutation'
+                ? 'required|exists:schools,id'
+                : 'nullable',
             'assign_dept_id' => 'required|exists:departments,id',
             'assign_pos_id' => 'required|exists:positions,id',
             'assign_start_date' => 'required|date',
             'assign_notes' => 'nullable|string|max:500',
         ], [
+            'assign_school_id.required' => 'Sekolah tujuan wajib dipilih untuk mutasi.',
             'assign_dept_id.required' => 'Departemen wajib dipilih.',
             'assign_pos_id.required' => 'Jabatan wajib dipilih.',
             'assign_start_date.required' => 'Tanggal mulai wajib diisi.',
         ]);
 
-        DB::transaction(function () {
+        DB::transaction(function () use ($targetSchoolId) {
+            $isCrossSchool = $this->assign_type === 'mutation'
+                && (int) $targetSchoolId !== (int) $this->employee->school_id;
+
             // Tutup assignment aktif
             PositionAssignment::where('employee_id', $this->employee->id)
                 ->where('is_active', true)
@@ -179,7 +242,7 @@ class EmployeeDetail extends Component
             // Buat assignment baru
             PositionAssignment::create([
                 'employee_id' => $this->employee->id,
-                'school_id' => $this->employee->school_id,
+                'school_id' => $targetSchoolId,
                 'department_id' => $this->assign_dept_id,
                 'position_id' => $this->assign_pos_id,
                 'start_date' => $this->assign_start_date,
@@ -187,15 +250,36 @@ class EmployeeDetail extends Component
                 'type' => $this->assign_type,
                 'notes' => $this->assign_notes ?: null,
             ]);
+
+            // Kalau mutasi lintas sekolah: update sekolah induk pegawai
+            // dan catat riwayat perpindahan sekolah.
+            if ($isCrossSchool) {
+                $oldSchoolId = $this->employee->school_id;
+
+                $this->employee->update(['school_id' => $targetSchoolId]);
+
+                EmployeeSchoolHistory::create([
+                    'employee_id' => $this->employee->id,
+                    'from_school_id' => $oldSchoolId,
+                    'to_school_id' => $targetSchoolId,
+                    'effective_date' => $this->assign_start_date,
+                    'reason' => $this->assign_notes ?: 'Mutasi jabatan lintas unit.',
+                    'recorded_by' => auth()->id(),
+                ]);
+            }
         });
 
-        // Reload
+        // Reload data pegawai agar header & riwayat jabatan langsung update
         $this->employee = $this->employee->fresh([
+            'school',
             'positionAssignments.position',
             'positionAssignments.department',
+            'positionAssignments.school',
             'activeAssignment.position',
             'activeAssignment.department',
         ]);
+
+        $this->nipyPreview = $this->generateNipyPreview();
 
         session()->flash('success', 'Penugasan jabatan berhasil disimpan.');
         $this->showAssignModal = false;

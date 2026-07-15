@@ -19,6 +19,14 @@
                 <option value="ditolak">Ditolak</option>
             </select>
         </div>
+        @can('recruitment.create')
+            <button wire:click="openWalkInModal" class="btn-primary gap-2">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Pelamar
+            </button>
+        @endcan
     </div>
 
     {{-- Pipeline Count --}}
@@ -57,13 +65,21 @@
                         <td>
                             <p class="font-medium text-gray-800">{{ $app->name }}</p>
                             <p class="text-xs text-gray-400">{{ $app->email }}</p>
+                            @if ($app->is_walk_in)
+                                <span class="badge badge-blue text-[10px] mt-0.5">Walk-in</span>
+                            @endif
                             @if ($app->is_converted)
                                 <span class="text-xs text-green-600 font-medium">✓ Sudah jadi pegawai</span>
                             @endif
                         </td>
                         <td class="hidden md:table-cell">
-                            <p class="text-sm text-gray-700">{{ $app->jobVacancy->title }}</p>
-                            <p class="text-xs text-gray-400">{{ $app->jobVacancy->school->name }}</p>
+                            @if ($app->is_walk_in)
+                                <p class="text-sm text-gray-700">{{ $app->applied_position }}</p>
+                                <p class="text-xs text-gray-400 italic">Lamaran langsung</p>
+                            @else
+                                <p class="text-sm text-gray-700">{{ $app->jobVacancy?->title ?? '-' }}</p>
+                                <p class="text-xs text-gray-400">{{ $app->jobVacancy?->school?->name ?? '-' }}</p>
+                            @endif
                         </td>
                         <td class="text-center hidden lg:table-cell">
                             <span class="badge-code">{{ $app->last_education_label }}</span>
@@ -73,21 +89,35 @@
                         </td>
                         <td class="text-center">
                             @if (!$app->is_converted && $app->status !== 'ditolak')
-                                <select wire:change="updateStatus({{ $app->id }}, $event.target.value)"
-                                    onclick="event.stopPropagation()" class="text-xs rounded-lg border ...">
-                                    @foreach ([
+                                @if ($app->is_walk_in)
+                                    {{-- Walk-in: pipeline simpel, langsung Diterima/Ditolak --}}
+                                    <select wire:change="updateStatus({{ $app->id }}, $event.target.value)"
+                                        onclick="event.stopPropagation()" class="text-xs rounded-lg border ...">
+                                        @foreach (['submitted' => 'Lamaran Masuk', 'diterima' => 'Diterima', 'ditolak' => 'Ditolak'] as $val => $lbl)
+                                            <option value="{{ $val }}"
+                                                {{ $app->status === $val ? 'selected' : '' }}>
+                                                {{ $lbl }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    {{-- Public form: pipeline penuh 4 tahap --}}
+                                    <select wire:change="updateStatus({{ $app->id }}, $event.target.value)"
+                                        onclick="event.stopPropagation()" class="text-xs rounded-lg border ...">
+                                        @foreach ([
         'submitted' => 'Lamaran Masuk',
         'tes_berkas' => 'Verifikasi Berkas',
         'tes_potensi' => 'Tes Potensi',
         'diterima' => 'Diterima',
         'ditolak' => 'Ditolak',
     ] as $val => $lbl)
-                                        <option value="{{ $val }}"
-                                            {{ $app->status === $val ? 'selected' : '' }}>
-                                            {{ $lbl }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                            <option value="{{ $val }}"
+                                                {{ $app->status === $val ? 'selected' : '' }}>
+                                                {{ $lbl }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @endif
                             @elseif($app->is_converted)
                                 <span class="text-xs text-gray-400 italic">Selesai</span>
                             @else
@@ -284,6 +314,26 @@
                         NIK sementara diberikan — NIPY resmi diterbitkan setelah lulus masa percobaan.
                     </div>
 
+                    {{-- Sekolah: hanya untuk walk-in karena tidak ada jobVacancy --}}
+                    @if ($convertIsWalkIn)
+                        <div>
+                            <label class="form-label">Unit / Sekolah <span class="text-red-500">*</span></label>
+                            <select wire:model="convertSchoolId"
+                                class="input @error('convertSchoolId') input-error @enderror">
+                                <option value="">-- Pilih Sekolah/Unit --</option>
+                                @foreach ($schools as $s)
+                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('convertSchoolId')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-amber-600 mt-1">
+                                Jabatan & departemen bisa dilengkapi lewat halaman detail pegawai setelah ini.
+                            </p>
+                        </div>
+                    @endif
+
                     {{-- Toggle Guru --}}
                     <div class="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                         <input wire:model.live="convertIsGuru" type="checkbox" id="is_guru"
@@ -343,6 +393,115 @@
                         onmouseout="this.style.background='#16a34a'">
                         <span wire:loading.remove wire:target="convertToEmployee">Konfirmasi & Jadikan Pegawai</span>
                         <span wire:loading wire:target="convertToEmployee">Memproses...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ── MODAL: Input Pelamar Walk-in ── --}}
+    @if ($showWalkInModal)
+        <div class="modal-backdrop" wire:click="$set('showWalkInModal',false)">
+            <div class="modal-box max-w-lg" wire:click.stop>
+                <div class="modal-header">
+                    <h3>Tambah Pelamar Walk-in</h3>
+                    <button wire:click="$set('showWalkInModal',false)" class="text-white/70 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                        Untuk pelamar yang datang langsung / tidak melalui portal lowongan publik.
+                    </p>
+
+                    {{-- Nama --}}
+                    <div>
+                        <label class="form-label">Nama Lengkap <span class="text-red-500">*</span></label>
+                        <input wire:model="wi_name" type="text"
+                            class="input @error('wi_name') input-error @enderror" placeholder="Nama lengkap pelamar">
+                        @error('wi_name')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Email + HP --}}
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="form-label">Email <span class="text-red-500">*</span></label>
+                            <input wire:model="wi_email" type="email"
+                                class="input @error('wi_email') input-error @enderror" placeholder="email@contoh.com">
+                            @error('wi_email')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="form-label">No. HP</label>
+                            <input wire:model="wi_phone" type="text" class="input" placeholder="08xx...">
+                        </div>
+                    </div>
+
+                    {{-- Gender --}}
+                    <div>
+                        <label class="form-label">Jenis Kelamin <span class="text-red-500">*</span></label>
+                        <select wire:model="wi_gender" class="input">
+                            <option value="male">Laki-laki</option>
+                            <option value="female">Perempuan</option>
+                        </select>
+                    </div>
+
+                    {{-- Posisi yang dilamar --}}
+                    <div>
+                        <label class="form-label">Posisi yang Dilamar <span class="text-red-500">*</span></label>
+                        <input wire:model="wi_applied_position" type="text"
+                            class="input @error('wi_applied_position') input-error @enderror"
+                            placeholder="contoh: Guru Matematika, Staf TU">
+                        @error('wi_applied_position')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Pendidikan --}}
+                    <div>
+                        <label class="form-label">Pendidikan Terakhir</label>
+                        <select wire:model="wi_last_education" class="input">
+                            <option value="">-- Pilih --</option>
+                            <option value="sd">SD</option>
+                            <option value="smp">SMP</option>
+                            <option value="sma">SMA/SMK</option>
+                            <option value="d3">D3</option>
+                            <option value="s1">S1</option>
+                            <option value="s2">S2</option>
+                            <option value="s3">S3</option>
+                        </select>
+                    </div>
+
+                    {{-- CV --}}
+                    <div>
+                        <label class="form-label">CV / Dokumen (opsional)</label>
+                        <input wire:model="wi_cv_file" type="file" accept=".pdf,.jpg,.jpeg,.png"
+                            class="input text-sm">
+                        <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG -- maks 5MB</p>
+                        @error('wi_cv_file')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Catatan HR --}}
+                    <div>
+                        <label class="form-label">Catatan HR (opsional)</label>
+                        <textarea wire:model="wi_hr_notes" rows="2" class="input resize-none"
+                            placeholder="Catatan awal, referensi, dsb..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button wire:click="$set('showWalkInModal',false)" class="btn-ghost">Batal</button>
+                    <button wire:click="saveWalkIn" wire:loading.attr="disabled"
+                        wire:loading.class="opacity-50 cursor-wait" class="btn-primary">
+                        <span wire:loading.remove wire:target="saveWalkIn">Simpan Pelamar</span>
+                        <span wire:loading wire:target="saveWalkIn">Menyimpan...</span>
                     </button>
                 </div>
             </div>

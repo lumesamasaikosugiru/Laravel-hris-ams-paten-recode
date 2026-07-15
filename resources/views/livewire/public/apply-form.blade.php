@@ -46,15 +46,38 @@
         <div class="card overflow-hidden mb-1">
             <div class="flex border-b border-gray-200 overflow-x-auto">
                 @foreach ([['biodata', '1', 'Data Diri'], ['education', '2', 'Pendidikan'], ['experience', '3', 'Pengalaman'], ['document', '4', 'Dokumen']] as [$tab, $num, $label])
-                    <button wire:click="$set('activeTab','{{ $tab }}')"
+                    @php
+                        $tabs = ['biodata', 'education', 'experience', 'document'];
+                        $curIdx = array_search($activeTab, $tabs);
+                        $tabIdx = array_search($tab, $tabs);
+                        // Bisa diklik kalau: tab ini sendiri, atau sebelumnya,
+                        // atau sudah pernah selesai divalidasi (completedTabs)
+                        $canClick = $tabIdx <= $curIdx || in_array($tab, $completedTabs);
+                        $isActive = $activeTab === $tab;
+                        $isDone = in_array($tab, $completedTabs) && !$isActive;
+                    @endphp
+                    <button @if ($canClick) wire:click="goToTab('{{ $tab }}')" @endif
+                        @if (!$canClick) disabled @endif
                         class="flex items-center gap-2 px-5 py-3.5 text-sm font-medium border-b-2 transition whitespace-nowrap shrink-0
-                           {{ $activeTab === $tab
+                           {{ $isActive
                                ? 'border-violet-600 text-violet-700 bg-violet-50/50'
-                               : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}">
+                               : ($canClick
+                                   ? 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                   : 'border-transparent text-gray-300 cursor-not-allowed') }}">
                         <span
                             class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold
-                             {{ $activeTab === $tab ? 'bg-violet-600 text-white' : 'bg-gray-200 text-gray-500' }}">
-                            {{ $num }}
+                             {{ $isActive
+                                 ? 'bg-violet-600 text-white'
+                                 : ($isDone
+                                     ? 'bg-green-500 text-white'
+                                     : ($canClick
+                                         ? 'bg-gray-200 text-gray-500'
+                                         : 'bg-gray-100 text-gray-300')) }}">
+                            @if ($isDone)
+                                ✓
+                            @else
+                                {{ $num }}
+                            @endif
                         </span>
                         {{ $label }}
                     </button>
@@ -90,11 +113,15 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                            <label class="form-label">Jenis Kelamin</label>
-                            <select wire:model="gender" class="input">
+                            <label class="form-label">Jenis Kelamin <span class="text-red-500">*</span></label>
+                            <select wire:model="gender" class="input @error('gender') input-error @enderror">
+                                <option value="">-- Pilih --</option>
                                 <option value="male">Laki-laki</option>
                                 <option value="female">Perempuan</option>
                             </select>
+                            @error('gender')
+                                <p class="form-error">Jenis kelamin wajib dipilih.</p>
+                            @enderror
                         </div>
                         <div>
                             <label class="form-label">Tempat Lahir</label>
@@ -118,13 +145,18 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                                 <label class="form-label">Jenjang <span class="text-red-500">*</span></label>
-                                <select wire:model="last_education" class="input">
+                                <select wire:model="last_education"
+                                    class="input @error('last_education') input-error @enderror">
+                                    <option value="">-- Pilih --</option>
                                     <option value="sma">SMA/SMK</option>
                                     <option value="d3">D3</option>
                                     <option value="s1">S1</option>
                                     <option value="s2">S2</option>
                                     <option value="s3">S3</option>
                                 </select>
+                                @error('last_education')
+                                    <p class="form-error">Pendidikan terakhir wajib dipilih.</p>
+                                @enderror
                             </div>
                             <div>
                                 <label class="form-label">Jurusan</label>
@@ -372,4 +404,16 @@
             </div>
         </div>
     @endif
+
+    {{-- Scroll ke atas saat pindah tab atau ada error validasi --}}
+    <script>
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('scroll-to-top', () => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
 </div>

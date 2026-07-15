@@ -15,6 +15,11 @@ class ApplyForm extends Component
 
     public JobVacancy $job;
     public string $activeTab = 'biodata';
+
+    // Tab yang sudah lolos validasi -- user hanya bisa klik tab header
+    // kalau tab sebelumnya sudah selesai. Mencegah skip validasi dengan
+    // klik langsung ke tab header tanpa lewat tombol "Selanjutnya".
+    public array $completedTabs = [];
     public bool $submitted = false;
 
     // ── Biodata ──────────────────────────────────────────────
@@ -97,12 +102,46 @@ class ApplyForm extends Component
     }
 
     // ── Tab navigation ────────────────────────────────────────
+
+    /** Aturan validasi per tab -- dipanggil saat klik Selanjutnya */
+    private function rulesForTab(string $tab): array
+    {
+        return match ($tab) {
+            'biodata' => [
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255',
+                'gender' => 'required|in:male,female',
+                'last_education' => 'required',
+            ],
+            'education' => [
+                'educations.*.institution' => 'required|string|max:255',
+                'educations.*.start_year' => 'required|digits:4|integer',
+            ],
+            // Tab experience & document tidak ada validasi saat nextTab
+            // (experience boleh kosong, cv_file divalidasi di submit())
+            default => [],
+        };
+    }
+
     public function nextTab(): void
     {
         $tabs = ['biodata', 'education', 'experience', 'document'];
         $current = array_search($this->activeTab, $tabs);
+
+        // Validasi field tab saat ini dulu sebelum pindah
+        $rules = $this->rulesForTab($this->activeTab);
+        if (!empty($rules)) {
+            $this->validate($rules, $this->messages);
+        }
+
+        // Tandai tab ini sudah selesai
+        if (!in_array($this->activeTab, $this->completedTabs)) {
+            $this->completedTabs[] = $this->activeTab;
+        }
+
         if ($current !== false && $current < count($tabs) - 1) {
             $this->activeTab = $tabs[$current + 1];
+            $this->dispatch('scroll-to-top');
         }
     }
 
@@ -112,7 +151,41 @@ class ApplyForm extends Component
         $current = array_search($this->activeTab, $tabs);
         if ($current > 0) {
             $this->activeTab = $tabs[$current - 1];
+            $this->dispatch('scroll-to-top');
         }
+    }
+
+    /**
+     * Pindah ke tab tertentu via klik header -- hanya diizinkan kalau
+     * tab tujuan sudah pernah dikunjungi/divalidasi (ada di completedTabs)
+     * ATAU tab tujuan = tab saat ini atau sebelumnya. Mencegah user
+     * melompat maju dan skip validasi.
+     */
+    public function goToTab(string $tab): void
+    {
+        $tabs = ['biodata', 'education', 'experience', 'document'];
+        $currentIndex = array_search($this->activeTab, $tabs);
+        $targetIndex = array_search($tab, $tabs);
+
+        if ($targetIndex === false)
+            return;
+
+        // Boleh mundur ke tab sebelumnya tanpa validasi
+        if ($targetIndex <= $currentIndex) {
+            $this->activeTab = $tab;
+            $this->dispatch('scroll-to-top');
+            return;
+        }
+
+        // Maju ke tab berikutnya: hanya kalau sudah completed
+        if (in_array($tab, $this->completedTabs)) {
+            $this->activeTab = $tab;
+            $this->dispatch('scroll-to-top');
+            return;
+        }
+
+        // Blokir -- user harus lewat tombol Selanjutnya
+        // (tidak ada aksi, tab header tidak bisa diklik)
     }
 
     // ── Education rows ────────────────────────────────────────
@@ -187,7 +260,9 @@ class ApplyForm extends Component
                     foreach ($errors as $key => $msg) {
                         if (str_starts_with($key, $field)) {
                             $this->activeTab = $tab;
-                            throw $e; // lempar ulang agar error tetap tampil
+                            // Scroll ke atas supaya user langsung lihat error
+                            $this->dispatch('scroll-to-top');
+                            throw $e;
                         }
                     }
                 }

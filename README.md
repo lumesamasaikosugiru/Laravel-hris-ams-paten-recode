@@ -124,8 +124,9 @@ Diisi via `UserSeeder.php`. Semua akun di bawah dibuat otomatis saat `php artisa
 - Halaman publik `/karir` dengan form pendaftaran multi-tab
 - CV wajib diupload saat pendaftaran
 - Pipeline seleksi: Lamaran → Verifikasi Berkas → Tes Potensi → Diterima/Ditolak
+- **Input pelamar walk-in oleh HR** — tanpa lowongan aktif, pipeline simpel (Lamaran Masuk → Diterima/Ditolak), badge "Walk-in" di tabel, filter sumber lamaran (Portal Publik / Walk-in)
 - Klik baris tabel → lihat detail pelamar (modal)
-- Konversi pelamar → pegawai (NIK sementara auto-generated)
+- Konversi pelamar → pegawai — untuk walk-in, HR memilih sekolah/unit di modal konversi; jabatan & departemen dilengkapi manual setelahnya
 
 ### ✅ Phase 3 — Manajemen Pegawai
 
@@ -249,7 +250,7 @@ routes/
 | Auth & Permission | `users` (+ `is_active`), `roles`, `permissions`, `model_has_roles`, `model_has_permissions`, `role_has_permissions` — Spatie                                                                                               |
 | Laravel bawaan    | `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `sessions`, `password_reset_tokens`                                                                                                                          |
 | Master Data       | `schools`, `departments`, `positions`, `skills`, `leave_types`                                                                                                                                                             |
-| Rekrutmen         | `job_vacancies`, `applicants`, `applicant_educations`, `applicant_experiences`, `applicant_skills`                                                                                                                         |
+| Rekrutmen         | `job_vacancies`, `applicants` (`job_vacancy_id` nullable, + `applied_position` untuk walk-in), `applicant_educations`, `applicant_experiences`, `applicant_skills`                                                         |
 | Kepegawaian       | `employees` (soft delete), `position_assignments` (+ `assignment_type`), `employee_status_histories`, `employee_skills`, `employee_school_histories`                                                                       |
 | Absensi           | `attendances` (+ GPS: `checkin/checkout_latitude/longitude/location_valid/location_name`, + offsite: `is_offsite`, `offsite_reason`, `offsite_note`, `offsite_status`, `offsite_approved_by/at`, `offsite_rejection_note`) |
 | Cuti              | `leave_balances`, `leave_requests` (soft delete, + `requires_school_approval`, `school_status`, `school_approved_by/at`, `school_rejection_note`)                                                                          |
@@ -491,6 +492,7 @@ php artisan hris:check-probation                     # Manual cek masa percobaan
 | —        | Defense-in-depth (16/17 komponen)      | ✅ Selesai                |
 | —        | Rantai Approval Cuti per-role          | ✅ Selesai                |
 | —        | Navigasi SPA (`wire:navigate`)         | ✅ Selesai                |
+| —        | Input pelamar walk-in oleh HR          | ✅ Selesai                |
 | 7        | Master Akademik & Jadwal (AMS)         | 🔲 Belum                  |
 | 8        | RPP & Review Workflow (AMS)            | 🔲 Belum                  |
 | 9        | Jurnal Mengajar (AMS)                  | 🔲 Belum                  |
@@ -511,6 +513,16 @@ php artisan hris:check-probation                     # Manual cek masa percobaan
 ---
 
 ## Changelog
+
+### 15 Juli 2026
+
+- **Fitur: Input pelamar walk-in oleh HR** — `job_vacancy_id` di tabel `applicants` dijadikan `nullable` (migration baru). HR bisa tambah pelamar yang datang langsung tanpa membuka lowongan publik via tombol "+ Tambah Pelamar" di halaman Data Pelamar. Data minimal: nama, email, HP, gender, posisi yang dilamar (text bebas, kolom baru `applied_position`), pendidikan, CV opsional, catatan HR. Sumber lamaran ditandai via kolom `source` yang sudah ada (`public_form`/`admin_input`).
+- **Pipeline walk-in disederhanakan** — pelamar walk-in hanya punya 3 opsi status (Lamaran Masuk → Diterima / Ditolak), tidak melalui 4 tahap pipeline seleksi penuh seperti portal publik.
+- **Filter sumber lamaran** — dropdown "Semua Sumber / Portal Publik / Walk-in" ditambahkan di toolbar Data Pelamar, bisa dikombinasikan dengan filter Status dan Lowongan.
+- **Fix konversi walk-in ke pegawai** — sebelumnya error `school_id cannot be null` karena walk-in tidak punya `jobVacancy`. Ditambahkan dropdown "Unit / Sekolah" di modal konversi khusus untuk walk-in (wajib dipilih). `PositionAssignment` tidak dibuat otomatis untuk walk-in, HR melengkapi jabatan & departemen lewat halaman detail pegawai setelahnya.
+- **Fix validasi form lamaran publik** — sebelumnya user bisa submit tanpa isi field wajib: (1) `nextTab()` tidak ada validasi sehingga bisa skip tab; (2) klik langsung ke tab header bypass validasi sepenuhnya; (3) field `gender` dan `last_education` tidak punya `@error` di blade dan tidak ada `option value=""` sehingga error tidak pernah terlihat. Semua diperbaiki: validasi per-tab di `nextTab()`, sistem `completedTabs` + `goToTab()` untuk blokir klik header ke tab yang belum selesai, `@error` ditambahkan ke semua field wajib.
+- **Visual tab form lamaran** — tab yang sudah selesai divalidasi tampil hijau dengan centang (✓), tab yang terkunci tampil abu pudar dan `disabled` (tidak bisa diklik), tab aktif tetap ungu.
+- **Scroll to top otomatis** — setelah pindah tab (maju/mundur) dan saat validasi gagal saat submit, halaman otomatis scroll ke atas supaya user langsung melihat field yang error.
 
 ### 14 Juli 2026
 

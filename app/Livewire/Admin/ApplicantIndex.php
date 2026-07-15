@@ -20,6 +20,7 @@ class ApplicantIndex extends Component
     public string $search = '';
     public string $jobFilter = '';
     public string $statusFilter = '';
+    public string $sourceFilter = '';  // '' = semua, 'public_form' = portal, 'admin_input' = walk-in
 
     // ── Walk-in input modal ───────────────────────────────────
     public bool $showWalkInModal = false;
@@ -271,6 +272,7 @@ class ApplicantIndex extends Component
                 ->orWhere('email', 'like', "%{$this->search}%"))
             ->when($this->jobFilter, fn($q) => $q->where('job_vacancy_id', $this->jobFilter))
             ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
+            ->when($this->sourceFilter, fn($q) => $q->where('source', $this->sourceFilter))
             ->latest()
             ->paginate(15);
 
